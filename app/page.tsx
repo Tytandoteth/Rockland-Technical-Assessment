@@ -35,6 +35,25 @@ export default function Home() {
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const lastSummarizedGrantId = useRef<string | null>(null);
 
+  // Enriched detail state
+  interface EnrichedDetail {
+    description: string;
+    estimatedFunding: number | null;
+    awardCeiling: number | null;
+    awardFloor: number | null;
+    numberOfAwards: number | null;
+    costSharing: boolean;
+    applicantTypes: string[];
+    estimatedPostDate: string | null;
+    estimatedResponseDate: string | null;
+    contactName: string | null;
+    contactEmail: string | null;
+    programTitle: string | null;
+  }
+  const [enrichedDetail, setEnrichedDetail] = useState<EnrichedDetail | null>(null);
+  const [enrichedLoading, setEnrichedLoading] = useState(false);
+  const lastEnrichedGrantId = useRef<string | null>(null);
+
   const profile = DEFAULT_CLINIC_PROFILE;
 
   // Fetch grants
@@ -75,14 +94,39 @@ export default function Home() {
     setPipeline(getPipeline());
   }, []);
 
-  // Clear AI summary when grant selection changes
+  // Clear AI summary and fetch enriched detail when grant selection changes
   useEffect(() => {
     if (selectedGrantId !== lastSummarizedGrantId.current) {
       setAiSummary(null);
       setAiSummarySource(null);
       setAiSummaryLoading(false);
     }
-  }, [selectedGrantId]);
+
+    // Fetch enriched detail for the selected grant
+    if (selectedGrantId && selectedGrantId !== lastEnrichedGrantId.current) {
+      setEnrichedDetail(null);
+      lastEnrichedGrantId.current = selectedGrantId;
+
+      // Only fetch for grants.gov source grants (not fallback)
+      const grant = grants.find((g) => g.id === selectedGrantId);
+      if (grant && grant.source === "grants.gov") {
+        setEnrichedLoading(true);
+        fetch("/api/grants/detail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ opportunityId: Number(selectedGrantId) }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data && lastEnrichedGrantId.current === selectedGrantId) {
+              setEnrichedDetail(data);
+            }
+          })
+          .catch(() => {})
+          .finally(() => setEnrichedLoading(false));
+      }
+    }
+  }, [selectedGrantId, grants]);
 
   const pipelineGrantIds = new Set(pipeline.map((p) => p.grantId));
 
@@ -299,6 +343,8 @@ export default function Home() {
                     aiSummarySource={aiSummarySource}
                     aiSummaryLoading={aiSummaryLoading}
                     onRequestSummary={handleRequestSummary}
+                    enrichedDetail={enrichedDetail}
+                    enrichedLoading={enrichedLoading}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-gray-400">
