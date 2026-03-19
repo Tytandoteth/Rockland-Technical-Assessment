@@ -16,6 +16,7 @@ Key capabilities:
 - **Editable clinic profile** — Hardcoded a realistic FQHC profile. Editing would be nice but doesn't prove the core value proposition. In production, this would be a settings page.
 - **Multiple search queries** — We query the Health category only. Could fan out queries across behavioral health, substance abuse, rural health for broader coverage.
 - **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, or fit level. Chose not to because it adds UI complexity without proving the core "is this worth pursuing?" loop.
+- **SAM.gov integration** — Would add UEI verification and exclusion checks for eligibility confirmation. Grants.gov covers the core discovery workflow.
 - **Authentication / multi-user** — Single-user demo. Would need auth + database for production.
 
 ## 3. Hybrid AI Approach: Heuristic First, AI Second Opinion
