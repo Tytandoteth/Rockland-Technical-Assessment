@@ -79,6 +79,21 @@ Grants.gov Search API → Route Handler → Normalize → Score → Client → R
 | `app/page.tsx` | Main page wiring all components |
 | `components/` | UI components (GrantList, GrantDetail, Pipeline, etc.) |
 
+## Assessment Requirement Coverage
+
+| Requirement | Status | Implementation |
+|------------|--------|----------------|
+| Real API call | Done | Grants.gov search + fetchOpportunity detail endpoints |
+| Structured data processing | Done | Normalize, score, enrich pipeline with typed internal models |
+| AI integration | Done | `/api/summarize` (OpenAI gpt-4o-mini) + `/api/profile/summarize` for onboarding |
+| Pipeline persistence | Done | localStorage with status management |
+| Deployed public URL | Done | Vercel production deployment |
+| Product requirements doc | Done | [PRODUCT_REQUIREMENTS.md](./PRODUCT_REQUIREMENTS.md) |
+| Architecture spec | Done | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| Key decisions (3-5) | Done | [KEY_DECISIONS.md](./KEY_DECISIONS.md) |
+| Build log with timestamps | Done | [BUILD_LOG.md](./BUILD_LOG.md) |
+| AI usage reflection | Done | [AI_REFLECTION.md](./AI_REFLECTION.md) |
+
 ## Documentation
 
 - [Product Requirements](./PRODUCT_REQUIREMENTS.md)
@@ -86,6 +101,7 @@ Grants.gov Search API → Route Handler → Normalize → Score → Client → R
 - [Key Decisions](./KEY_DECISIONS.md)
 - [Build Log](./BUILD_LOG.md)
 - [AI Reflection](./AI_REFLECTION.md)
+- [Talking Points](./TALKING_POINTS.md)
 
 ## Deployment
 

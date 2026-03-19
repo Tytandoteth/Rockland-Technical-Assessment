@@ -72,8 +72,8 @@ export function normalizeGrant(hit: GrantsGovHit): GrantOpportunity {
     amountMax: hit.awardCeiling || undefined,
     eligibilityText: hit.synopsis?.applicantTypes?.join(", ") || undefined,
     summary: hit.synopsis?.synopsisDesc || undefined,
-    url: oppNumber
-      ? `https://www.grants.gov/search-results-detail/${oppNumber}`
+    url: hit.id
+      ? `https://www.grants.gov/search-results-detail/${hit.id}`
       : undefined,
     source: "grants.gov",
     rawTags: hit.synopsis?.fundingActivityCategories || hit.cfdaList || undefined,

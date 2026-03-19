@@ -202,7 +202,7 @@ export default function Home() {
     } finally {
       setAiSummaryLoading(false);
     }
-  }, [selectedGrant, selectedAssessment, profile]);
+  }, [selectedGrant, selectedAssessment, profile, enrichedDetail]);
 
   const handleSaveToPipeline = useCallback(() => {
     if (!selectedGrant || !selectedAssessment) return;
