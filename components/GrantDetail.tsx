@@ -158,34 +158,67 @@ export default function GrantDetail({
         )}
       </div>
 
-      {/* AI Summary / Second Opinion */}
-      <div className="bg-rockland-teal/10 border border-rockland-teal/20 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-rockland-teal">
-            Quick Take
-          </h3>
-          {aiSummarySource && (
+      {/* AI Analysis */}
+      {aiSummary ? (
+        <div className="bg-rockland-teal/10 border border-rockland-teal/20 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-rockland-teal">
+              AI Grant Analysis
+            </h3>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-rockland-teal/15 text-rockland-teal font-medium">
               {aiSummarySource === "ai" ? "AI-generated" : "Heuristic"}
             </span>
-          )}
-        </div>
-        {aiSummaryLoading ? (
-          <div className="flex items-center gap-2 text-sm text-rockland-teal">
-            <span className="inline-block w-4 h-4 border-2 border-rockland-teal/30 border-t-rockland-teal rounded-full animate-spin" />
-            Generating summary...
           </div>
-        ) : aiSummary ? (
-          <p className="text-sm text-rockland-navy leading-relaxed">{aiSummary}</p>
-        ) : (
-          <button
-            onClick={onRequestSummary}
-            className="text-sm text-rockland-teal hover:text-rockland-teal/80 font-medium underline underline-offset-2"
-          >
-            Get AI-powered recommendation →
-          </button>
-        )}
-      </div>
+          <div className="text-sm text-rockland-navy leading-relaxed space-y-2 [&>p]:mb-2">
+            {aiSummary.split("\n").map((line, i) => {
+              const trimmed = line.trim();
+              if (!trimmed) return null;
+              // Bold headers like **Recommendation:**
+              if (trimmed.startsWith("**")) {
+                const match = trimmed.match(/^\*\*(.+?)\*\*\s*(.*)/);
+                if (match) {
+                  return (
+                    <p key={i}>
+                      <span className="font-semibold text-rockland-navy">{match[1]}</span>{" "}
+                      <span className="text-rockland-navy/80">{match[2]}</span>
+                    </p>
+                  );
+                }
+              }
+              // Bullet points
+              if (trimmed.startsWith("- ")) {
+                return (
+                  <p key={i} className="pl-3 text-rockland-navy/80">
+                    <span className="text-rockland-teal mr-1.5">&#8226;</span>
+                    {trimmed.slice(2)}
+                  </p>
+                );
+              }
+              return <p key={i} className="text-rockland-navy/80">{trimmed}</p>;
+            })}
+          </div>
+        </div>
+      ) : aiSummaryLoading ? (
+        <div className="bg-rockland-teal/10 border border-rockland-teal/20 rounded-lg p-5">
+          <div className="flex items-center gap-3 text-sm text-rockland-teal">
+            <span className="inline-block w-5 h-5 border-2 border-rockland-teal/30 border-t-rockland-teal rounded-full animate-spin" />
+            <div>
+              <p className="font-medium">Analyzing this grant...</p>
+              <p className="text-rockland-teal/70 text-xs mt-0.5">Reviewing eligibility, funding fit, and next steps</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={onRequestSummary}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-rockland-teal text-white text-sm font-semibold rounded-lg hover:bg-rockland-teal/90 transition-colors shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          Get AI Analysis →
+        </button>
+      )}
 
       {/* Risk Flags */}
       {riskFlags.length > 0 && (

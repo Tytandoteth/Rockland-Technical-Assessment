@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GrantOpportunity, ClinicProfile, GrantAssessment } from "@/lib/types";
 
+interface EnrichedDetail {
+  description?: string;
+  estimatedFunding?: number | null;
+  awardCeiling?: number | null;
+  numberOfAwards?: number | null;
+  costSharing?: boolean;
+  applicantTypes?: string[];
+  estimatedPostDate?: string | null;
+  estimatedResponseDate?: string | null;
+  programTitle?: string | null;
+}
+
 interface SummarizeRequest {
   grant: GrantOpportunity;
   profile: ClinicProfile;
   assessment: GrantAssessment;
+  enrichedDetail?: EnrichedDetail | null;
 }
 
 interface SummarizeResponse {
@@ -12,41 +25,77 @@ interface SummarizeResponse {
   source: "ai" | "heuristic";
 }
 
-function buildPrompt(grant: GrantOpportunity, profile: ClinicProfile, assessment: GrantAssessment): string {
-  return `You are a grant advisor for FQHC (Federally Qualified Health Center) clinics. Be direct and concise — the CFO has 10 minutes.
+function buildPrompt(
+  grant: GrantOpportunity,
+  profile: ClinicProfile,
+  assessment: GrantAssessment,
+  enriched?: EnrichedDetail | null
+): string {
+  const fundingInfo = enriched?.estimatedFunding
+    ? `$${enriched.estimatedFunding.toLocaleString()} total${enriched.numberOfAwards ? ` across ~${enriched.numberOfAwards} awards` : ""}`
+    : grant.amountMax
+      ? `Up to $${grant.amountMax.toLocaleString()}`
+      : "Not specified";
 
-Clinic Profile:
+  const description = enriched?.description || grant.summary || "No description available";
+  const eligibility = enriched?.applicantTypes?.length
+    ? enriched.applicantTypes.join(", ")
+    : grant.eligibilityText || "Not specified";
+
+  return `You are a senior grant advisor for FQHC (Federally Qualified Health Center) clinics. Provide a detailed but scannable analysis. The CFO is smart but time-constrained.
+
+CLINIC PROFILE:
 - Name: ${profile.clinicName}
 - Type: ${profile.clinicType} in ${profile.state}
+- Size: ${profile.orgSizeBand || "Not specified"}
 - Focus areas: ${profile.focusAreas.join(", ")}
 - Patient population: ${profile.patientPopulationNotes || "Not specified"}
 
-Grant Opportunity:
+GRANT OPPORTUNITY:
 - Title: ${grant.title}
-- Agency: ${grant.agency}
-- Deadline: ${grant.deadline || "Not specified"}
-- Funding: ${grant.amountMax ? `Up to $${grant.amountMax.toLocaleString()}` : "Not specified"}
-- Summary: ${grant.summary || "No description available"}
-- Eligibility: ${grant.eligibilityText || "Not specified"}
+- Agency: ${grant.agency}${enriched?.programTitle ? ` — ${enriched.programTitle}` : ""}
+- Funding: ${fundingInfo}${enriched?.costSharing ? " (cost sharing required)" : ""}
+- Deadline: ${grant.deadline || enriched?.estimatedPostDate || enriched?.estimatedResponseDate || "Not specified"}
+- Eligibility: ${eligibility}
+- Description: ${description.slice(0, 1500)}
 
-Our heuristic scored this as ${assessment.fitLabel} Fit (${assessment.fitScore}/100).
-Risk flags: ${assessment.riskFlags.length > 0 ? assessment.riskFlags.join("; ") : "None"}
+HEURISTIC ASSESSMENT: ${assessment.fitLabel} Fit (${assessment.fitScore}/100)
+${assessment.riskFlags.length > 0 ? `Risk flags: ${assessment.riskFlags.join("; ")}` : "No risk flags identified"}
 
-In 2-3 sentences, give your recommendation: should this clinic pursue, skip, or investigate further? Include one key caveat or action item. Do not repeat the grant title.`;
+Provide your analysis in this exact format:
+
+**Recommendation:** [PURSUE / INVESTIGATE / SKIP] — [one sentence why]
+
+**Fit Analysis:** [2-3 sentences on how this grant aligns with the clinic's focus areas, patient population, and capabilities]
+
+**Key Eligibility Considerations:** [1-2 sentences on whether this clinic type is likely eligible and any requirements to verify]
+
+**Funding Assessment:** [1 sentence on whether the funding amount and structure make sense for this clinic's size]
+
+**Next Steps:** [2-3 specific, actionable bullet points the CFO should take this week if pursuing]
+
+Be direct. Use plain language. Flag unknowns honestly.`;
 }
 
-function buildHeuristicFallback(assessment: GrantAssessment): string {
+function buildHeuristicFallback(
+  assessment: GrantAssessment,
+  grant: GrantOpportunity
+): string {
   const label = assessment.fitLabel;
-  const action = assessment.recommendedAction;
-  const flags = assessment.riskFlags;
+  const rec = label === "High" ? "PURSUE" : label === "Medium" ? "INVESTIGATE" : "SKIP";
 
-  if (label === "High") {
-    return `This grant is a strong match for your clinic's focus areas. ${action}. ${flags.length > 0 ? `Watch for: ${flags[0]}.` : ""}`;
-  } else if (label === "Medium") {
-    return `This grant has moderate relevance to your clinic. ${action}. ${flags.length > 0 ? `Key concern: ${flags[0]}.` : ""}`;
-  } else {
-    return `This grant has limited overlap with your clinic's priorities. ${action}. ${flags.length > 0 ? `Note: ${flags[0]}.` : ""}`;
-  }
+  return `**Recommendation:** ${rec} — ${assessment.recommendedAction}
+
+**Fit Analysis:** ${assessment.fitReason}
+
+**Key Eligibility Considerations:** ${grant.eligibilityText || "Eligibility details not available — verify on Grants.gov before investing time."}
+
+**Funding Assessment:** ${grant.amountMax ? `Funding up to $${grant.amountMax.toLocaleString()} — review the full listing for match requirements.` : "Funding amount not specified — check the full listing."}
+
+**Next Steps:**
+- Review the full opportunity listing on Grants.gov
+- Confirm your organization meets eligibility requirements
+- ${label === "High" ? "Begin preparing application materials" : "Assess whether this aligns with current strategic priorities"}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -57,7 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { grant, profile, assessment } = body;
+  const { grant, profile, assessment, enrichedDetail } = body;
 
   if (!grant || !profile || !assessment) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -65,17 +114,16 @@ export async function POST(request: NextRequest) {
 
   const apiKey = process.env.OPENAI_API_KEY;
 
-  // If no API key, return heuristic fallback immediately
   if (!apiKey) {
     const result: SummarizeResponse = {
-      summary: buildHeuristicFallback(assessment),
+      summary: buildHeuristicFallback(assessment, grant),
       source: "heuristic",
     };
     return NextResponse.json(result);
   }
 
   try {
-    const prompt = buildPrompt(grant, profile, assessment);
+    const prompt = buildPrompt(grant, profile, assessment, enrichedDetail);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -86,10 +134,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 200,
+        max_tokens: 600,
         temperature: 0.3,
       }),
-      signal: AbortSignal.timeout(8000), // 8s timeout
+      signal: AbortSignal.timeout(12000),
     });
 
     if (!response.ok) {
@@ -111,9 +159,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("AI summary failed, using heuristic fallback:", error);
 
-    // Graceful fallback to heuristic
     const result: SummarizeResponse = {
-      summary: buildHeuristicFallback(assessment),
+      summary: buildHeuristicFallback(assessment, grant),
       source: "heuristic",
     };
     return NextResponse.json(result);

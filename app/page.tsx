@@ -183,6 +183,7 @@ export default function Home() {
           grant: selectedGrant,
           profile,
           assessment: selectedAssessment,
+          enrichedDetail,
         }),
       });
 
