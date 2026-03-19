@@ -88,7 +88,7 @@ export default function GrantDetail({
       <div>
         <div className="flex items-center gap-2 mb-2">
           <FitBadge label={assessment.fitLabel} score={assessment.fitScore} />
-          <DeadlineBadge deadline={grant.deadline} />
+          <DeadlineBadge deadline={grant.deadline || enrichedDetail?.estimatedPostDate || enrichedDetail?.estimatedResponseDate || ""} />
           {enrichedLoading && (
             <span className="text-[10px] text-rockland-navy/40 flex items-center gap-1">
               <span className="inline-block w-3 h-3 border border-rockland-gray border-t-rockland-teal rounded-full animate-spin" />
