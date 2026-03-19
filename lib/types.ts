@@ -37,6 +37,7 @@ export interface PipelineItem {
   grantId: string;
   grantTitle: string;
   grantDeadline?: string;
+  grantUrl?: string;
   status: "To Review" | "Interested" | "Applying" | "Submitted";
   nextStep?: string;
   note?: string;

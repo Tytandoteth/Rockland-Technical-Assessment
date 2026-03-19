@@ -133,6 +133,10 @@ export default function Home() {
   const selectedGrant = grants.find((g) => g.id === selectedGrantId) || null;
   const selectedAssessment =
     assessments.find((a) => a.grantId === selectedGrantId) || null;
+  const selectedPipelineItem =
+    !selectedGrant && selectedGrantId
+      ? pipeline.find((p) => p.grantId === selectedGrantId) || null
+      : null;
 
   // AI summary request
   const handleRequestSummary = useCallback(async () => {
@@ -176,6 +180,7 @@ export default function Home() {
       grantId: selectedGrant.id,
       grantTitle: selectedGrant.title,
       grantDeadline: selectedGrant.deadline || undefined,
+      grantUrl: selectedGrant.url || undefined,
       status: "To Review",
       nextStep: selectedAssessment.recommendedAction,
       savedAt: new Date().toISOString(),
@@ -346,6 +351,51 @@ export default function Home() {
                     enrichedDetail={enrichedDetail}
                     enrichedLoading={enrichedLoading}
                   />
+                ) : selectedPipelineItem ? (
+                  <div className="space-y-4">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                      <p className="text-sm text-amber-700">
+                        This grant is no longer in the current search results. Showing saved info.
+                      </p>
+                    </div>
+                    <h2 className="text-lg font-bold text-gray-900">{selectedPipelineItem.grantTitle}</h2>
+                    {selectedPipelineItem.grantDeadline && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
+                          Deadline
+                        </p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {new Date(selectedPipelineItem.grantDeadline).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
+                        Pipeline Status
+                      </p>
+                      <p className="text-sm font-semibold text-gray-800">{selectedPipelineItem.status}</p>
+                    </div>
+                    {selectedPipelineItem.nextStep && (
+                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                        <h3 className="text-sm font-semibold text-blue-900 mb-1">Next Step</h3>
+                        <p className="text-sm text-blue-800">{selectedPipelineItem.nextStep}</p>
+                      </div>
+                    )}
+                    {selectedPipelineItem.grantUrl && (
+                      <a
+                        href={selectedPipelineItem.grantUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        View on Grants.gov
+                      </a>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-gray-400">
                     <div className="text-center">
