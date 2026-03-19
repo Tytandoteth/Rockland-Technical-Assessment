@@ -83,7 +83,8 @@ function daysUntilDeadline(deadline: string): number | null {
 
 export function scoreGrant(
   grant: GrantOpportunity,
-  profile: ClinicProfile
+  profile: ClinicProfile,
+  extraKeywords?: string[]
 ): GrantAssessment {
   const searchText = [
     grant.title,
@@ -126,6 +127,18 @@ export function scoreGrant(
     reasons.push(
       `Targets relevant populations: ${popMatches.slice(0, 3).join(", ")}`
     );
+  }
+
+  // 3b. AI-enhanced keyword matching (up to 10 pts bonus)
+  if (extraKeywords && extraKeywords.length > 0) {
+    const extraMatches = getMatchedKeywords(searchText, extraKeywords);
+    const extraScore = Math.min(10, extraMatches.length * 3);
+    score += extraScore;
+    if (extraMatches.length > 0 && focusMatches.length === 0) {
+      reasons.push(
+        `Matches clinic profile keywords: ${extraMatches.slice(0, 3).join(", ")}`
+      );
+    }
   }
 
   // 4. Eligibility signals (up to 10 pts)

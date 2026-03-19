@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
+  ClinicProfile as ClinicProfileType,
   GrantOpportunity,
   GrantAssessment,
   PipelineItem,
@@ -14,12 +15,30 @@ import {
   updatePipelineItem,
   removeFromPipeline,
 } from "@/lib/pipeline";
+import OnboardingWizard from "@/components/OnboardingWizard";
 import ClinicProfile from "@/components/ClinicProfile";
 import GrantList from "@/components/GrantList";
 import GrantDetail from "@/components/GrantDetail";
 import Pipeline from "@/components/Pipeline";
 
+const PROFILE_KEY = "rockland-clinic-profile";
+
+function loadSavedProfile(): ClinicProfileType | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export default function Home() {
+  const [profile, setProfile] = useState<ClinicProfileType | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
   const [grants, setGrants] = useState<GrantOpportunity[]>([]);
   const [assessments, setAssessments] = useState<GrantAssessment[]>([]);
   const [selectedGrantId, setSelectedGrantId] = useState<string | null>(null);
@@ -54,17 +73,31 @@ export default function Home() {
   const [enrichedLoading, setEnrichedLoading] = useState(false);
   const lastEnrichedGrantId = useRef<string | null>(null);
 
-  const profile = DEFAULT_CLINIC_PROFILE;
+  // Initialize: check for saved profile
+  useEffect(() => {
+    const saved = loadSavedProfile();
+    if (saved) {
+      setProfile(saved);
+      setShowWizard(false);
+    } else {
+      setShowWizard(true);
+    }
+    setInitialized(true);
+  }, []);
 
-  // Fetch grants
-  const fetchGrants = useCallback(async () => {
+  // Fetch grants when profile is available
+  const fetchGrants = useCallback(async (p: ClinicProfileType) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Send full stored profile (may include AI-generated scoringKeywords)
+      const storedRaw = localStorage.getItem(PROFILE_KEY);
+      const fullProfile = storedRaw ? JSON.parse(storedRaw) : p;
+
       const res = await fetch("/api/grants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profile }),
+        body: JSON.stringify({ profile: fullProfile }),
       });
 
       if (!res.ok) throw new Error("Failed to fetch grants");
@@ -74,7 +107,6 @@ export default function Home() {
       setAssessments(data.assessments);
       setSource(data.source);
 
-      // Auto-select first grant
       if (data.grants.length > 0) {
         setSelectedGrantId(data.grants[0].id);
       }
@@ -83,11 +115,13 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    fetchGrants();
-  }, [fetchGrants]);
+    if (profile) {
+      fetchGrants(profile);
+    }
+  }, [profile, fetchGrants]);
 
   // Load pipeline from localStorage
   useEffect(() => {
@@ -102,12 +136,10 @@ export default function Home() {
       setAiSummaryLoading(false);
     }
 
-    // Fetch enriched detail for the selected grant
     if (selectedGrantId && selectedGrantId !== lastEnrichedGrantId.current) {
       setEnrichedDetail(null);
       lastEnrichedGrantId.current = selectedGrantId;
 
-      // Only fetch for grants.gov source grants (not fallback)
       const grant = grants.find((g) => g.id === selectedGrantId);
       if (grant && grant.source === "grants.gov") {
         setEnrichedLoading(true);
@@ -138,9 +170,8 @@ export default function Home() {
       ? pipeline.find((p) => p.grantId === selectedGrantId) || null
       : null;
 
-  // AI summary request
   const handleRequestSummary = useCallback(async () => {
-    if (!selectedGrant || !selectedAssessment) return;
+    if (!selectedGrant || !selectedAssessment || !profile) return;
     setAiSummaryLoading(true);
     lastSummarizedGrantId.current = selectedGrant.id;
 
@@ -158,7 +189,6 @@ export default function Home() {
       if (!res.ok) throw new Error("Summary request failed");
 
       const data = await res.json();
-      // Only set if this is still the selected grant
       if (lastSummarizedGrantId.current === selectedGrant.id) {
         setAiSummary(data.summary);
         setAiSummarySource(data.source);
@@ -171,7 +201,7 @@ export default function Home() {
     } finally {
       setAiSummaryLoading(false);
     }
-  }, [selectedGrant, selectedAssessment]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedGrant, selectedAssessment, profile]);
 
   const handleSaveToPipeline = useCallback(() => {
     if (!selectedGrant || !selectedAssessment) return;
@@ -211,6 +241,23 @@ export default function Home() {
     []
   );
 
+  const handleWizardComplete = useCallback((newProfile: ClinicProfileType) => {
+    setProfile(newProfile);
+    setShowWizard(false);
+  }, []);
+
+  const handleEditProfile = useCallback(() => {
+    setShowWizard(true);
+  }, []);
+
+  // Don't render until we've checked localStorage
+  if (!initialized) return null;
+
+  // Show wizard if no profile
+  if (showWizard || !profile) {
+    return <OnboardingWizard onComplete={handleWizardComplete} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -244,7 +291,7 @@ export default function Home() {
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 flex items-center justify-between">
             <span>{error}</span>
             <button
-              onClick={fetchGrants}
+              onClick={() => fetchGrants(profile)}
               className="ml-3 px-3 py-1 text-xs font-semibold bg-red-100 hover:bg-red-200 rounded transition-colors"
             >
               Retry
@@ -260,9 +307,17 @@ export default function Home() {
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {/* Clinic Profile */}
             <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h2 className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-3">
-                Your Clinic Profile
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+                  Your Clinic Profile
+                </h2>
+                <button
+                  onClick={handleEditProfile}
+                  className="text-[10px] text-blue-500 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
               <ClinicProfile profile={profile} />
             </div>
 
@@ -279,7 +334,7 @@ export default function Home() {
                 </h2>
                 {!isLoading && (
                   <button
-                    onClick={fetchGrants}
+                    onClick={() => fetchGrants(profile)}
                     className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
                     title="Refresh grants from Grants.gov"
                   >

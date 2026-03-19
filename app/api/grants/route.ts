@@ -62,11 +62,14 @@ async function fetchWithRetry(body: object, retries: number = MAX_RETRIES): Prom
 
 export async function POST(request: NextRequest) {
   let profile: ClinicProfile = DEFAULT_CLINIC_PROFILE;
+  let scoringKeywords: string[] = [];
 
   try {
     const body = await request.json();
     if (body.profile) {
       profile = body.profile;
+      // AI-generated scoring keywords stored alongside profile
+      scoringKeywords = body.profile.scoringKeywords || [];
     }
   } catch {
     // Use defaults if no body
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Score each grant against the clinic profile
-    const allAssessments = allGrants.map((grant) => scoreGrant(grant, profile));
+    const allAssessments = allGrants.map((grant) => scoreGrant(grant, profile, scoringKeywords));
 
     // Sort by score descending, take top 25
     const relevant = allGrants.map((grant, i) => ({
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback to local data
     const assessments = FALLBACK_GRANTS.map((grant) =>
-      scoreGrant(grant, profile)
+      scoreGrant(grant, profile, scoringKeywords)
     );
     const sorted = sortByFitScore([...FALLBACK_GRANTS], assessments);
 
