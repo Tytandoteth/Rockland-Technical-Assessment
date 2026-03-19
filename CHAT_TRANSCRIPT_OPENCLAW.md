@@ -366,4 +366,62 @@ AI Reflection covers all 3 required bullets:
 
 ---
 
+## 16:02 — Improvements Documentation
+
+**Ty:** Add this as a .md to address improvements. Add to the repo.
+
+**Meridian:** [Created and pushed IMPROVEMENTS.md]
+
+Documented future enhancements identified during QA:
+
+**High Priority:**
+1. Scoring threshold calibration — all grants showing Medium/Low Fit despite excellent matches
+2. International grant filtering — Ukraine/India/Uganda grants appearing (CDC Global Health)
+
+**Medium Priority:**
+3. Agency name truncation fix
+4. Edit profile pre-fill
+5. Pipeline item notes
+
+**Nice to Have:**
+6. Sort/filter controls
+7. Deadline reminders
+8. Grant comparison view
+9. SAM.gov integration
+
+Pushed to repo: `docs: add IMPROVEMENTS.md with future enhancements`
+
+---
+
+## 16:05 — Fix Prompt Generation
+
+**Ty:** Give me the prompt to give to Claude for this
+
+**Meridian:** [Provided complete prompt for scoring fixes]
+
+Prompt includes:
+- Key files: scoring.ts, normalize.ts, api.ts, types, GrantCard.tsx
+- Task 1: Fix thresholds (lower to 45/25 OR add boost points)
+- Task 2: Filter international grants (-50 penalty or filter)
+- Expected result: CCBHC grant should show "High Fit"
+
+---
+
+## 16:13 — Final Transcript Update
+
+**Ty:** Update the transcript file. We're wrapping up now.
+
+**Meridian:** [Updated this document with final session entries]
+
+---
+
+**Session Summary:**
+- Duration: ~2.5 hours (13:47–16:13 MYT)
+- Commits reviewed: 4 major feature commits
+- Documents created: 12 markdown files
+- QA: Full browser automation test passed
+- Status: **Submission-ready** 🧭
+
+---
+
 *End of session transcript*
