@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rockland — Grant Discovery for FQHCs
 
-## Getting Started
+A focused decision-support tool that helps FQHC CFOs answer: **"Which grants are worth my attention right now, why, what's unclear, and what should I do next?"** — in under 10 minutes.
 
-First, run the development server:
+## What It Does
+
+- Fetches live grant opportunities from the Grants.gov API
+- Scores each grant against your clinic's profile using a transparent heuristic
+- Shows fit reasoning, risk flags, unknowns, and a recommended next step
+- Lets you save grants to a lightweight pipeline tracker
+
+## Why It Exists
+
+CFOs at community health clinics spend 4-6 hours/week manually searching for grants across fragmented systems. They need quick signal — not deep workflow. This tool surfaces the grants worth pursuing and explains why, so the CFO can make a decision in minutes, not hours.
+
+## Live Demo
+
+**Production URL:** https://rockland-ngxe4ljfq-tytan-5553s-projects.vercel.app
+
+## Local Setup
 
 ```bash
+cd rockland
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture Summary
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js 16** with App Router — single-surface architecture
+- **Route handler** (`/api/grants`) proxies Grants.gov, normalizes data, runs fit scoring
+- **Transparent heuristic scoring** — keyword overlap, agency relevance, deadline proximity → 0-100 score with human-readable reasoning
+- **localStorage** for pipeline persistence — no database required
+- **Vercel** deployment — zero-config, instant
 
-## Learn More
+### Data Flow
 
-To learn more about Next.js, take a look at the following resources:
+```
+Grants.gov API → Route Handler → Normalize → Score → Client → Render
+                                    ↑
+                            Clinic Profile
+                          (focus areas drive scoring)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Key Files
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| File | Purpose |
+|------|---------|
+| `app/api/grants/route.ts` | Grants.gov fetch + normalize + score |
+| `lib/scoring.ts` | Transparent fit scoring heuristic |
+| `lib/normalize.ts` | Grants.gov → internal model conversion |
+| `lib/types.ts` | Core data types |
+| `lib/pipeline.ts` | localStorage persistence helpers |
+| `lib/fallback-grants.ts` | Sample data when API is unavailable |
+| `app/page.tsx` | Main page wiring all components |
+| `components/` | UI components (GrantList, GrantDetail, Pipeline, etc.) |
 
-## Deploy on Vercel
+## Documentation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Product Requirements](./PRODUCT_REQUIREMENTS.md)
+- [Architecture](./ARCHITECTURE.md)
+- [Key Decisions](./KEY_DECISIONS.md)
+- [Build Log](./BUILD_LOG.md)
+- [AI Reflection](./AI_REFLECTION.md)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deployed to Vercel. Push to `main` triggers automatic deployment.
+
+```bash
+vercel --prod
+```
