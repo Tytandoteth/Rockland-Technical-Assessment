@@ -35,6 +35,42 @@ const US_STATES = [
   "Wisconsin","Wyoming",
 ];
 
+const SAMPLE_PRESETS = [
+  {
+    label: "Rural FQHC",
+    clinicName: "Sunrise Community Health Center",
+    state: "Colorado",
+    clinicType: "FQHC",
+    staffSize: "100-200 staff",
+    focusAreas: ["behavioral health", "dental", "preventive care", "chronic disease management"],
+    patientDescription: "Low-income, uninsured/underinsured patients in rural and semi-urban areas. High rates of diabetes, hypertension, and behavioral health needs.",
+    currentGrants: "HRSA Health Center Program",
+    biggestNeed: "Expanding behavioral health and dental services",
+  },
+  {
+    label: "Urban Safety-Net",
+    clinicName: "Metro Community Health",
+    state: "California",
+    clinicType: "FQHC",
+    staffSize: "200-500 staff",
+    focusAreas: ["behavioral health", "substance abuse treatment", "HIV/AIDS services", "maternal health"],
+    patientDescription: "Predominantly Medicaid and uninsured patients in urban setting. Diverse immigrant populations with language barriers. High prevalence of substance use disorders and mental health needs.",
+    currentGrants: "SAMHSA CCBHC grant, Ryan White HIV/AIDS Program",
+    biggestNeed: "Integrated behavioral health and primary care",
+  },
+  {
+    label: "Small Rural Clinic",
+    clinicName: "Valley Family Health",
+    state: "Montana",
+    clinicType: "Rural Health Clinic",
+    staffSize: "25-50 staff",
+    focusAreas: ["preventive care", "maternal health", "telehealth", "chronic disease management"],
+    patientDescription: "Rural farming communities, elderly patients, migrant workers. Limited specialist access — nearest hospital is 60 miles away.",
+    currentGrants: "",
+    biggestNeed: "Telehealth expansion and maternal care",
+  },
+];
+
 export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +89,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [patientDescription, setPatientDescription] = useState("");
   const [currentGrants, setCurrentGrants] = useState("");
   const [biggestNeed, setBiggestNeed] = useState("");
+
+  function loadPreset(preset: typeof SAMPLE_PRESETS[number]) {
+    setClinicName(preset.clinicName);
+    setState(preset.state);
+    setClinicType(preset.clinicType);
+    setStaffSize(preset.staffSize);
+    setSelectedFocusAreas(preset.focusAreas);
+    setOtherFocusArea("");
+    setPatientDescription(preset.patientDescription);
+    setCurrentGrants(preset.currentGrants);
+    setBiggestNeed(preset.biggestNeed);
+    setStep(3); // Jump to final step so user can review and submit
+  }
 
   function toggleFocusArea(area: string) {
     setSelectedFocusAreas((prev) =>
@@ -154,6 +203,26 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             Step {step} of 3
           </p>
         </div>
+
+        {/* Sample Presets */}
+        {step === 1 && (
+          <div className="mb-5 pb-5 border-b border-gray-100">
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-2">
+              Quick Start — use a sample clinic
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {SAMPLE_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => loadPreset(preset)}
+                  className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Step 1: Basics */}
         {step === 1 && (
