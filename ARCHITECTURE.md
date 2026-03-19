@@ -46,6 +46,33 @@ Single endpoint that does everything server-side:
 5. **Sort** by fit score descending, return top 25
 6. **Fallback** to local sample data if API fails (10s timeout)
 
+### `POST /api/grants/detail`
+
+Per-grant enrichment using Grants.gov's `fetchOpportunity` endpoint:
+
+1. **Receive** grant ID from client
+2. **Fetch** from `POST https://api.grants.gov/v1/api/fetchOpportunity`
+3. **Extract** from `forecast` (for forecasted grants) or `synopsis` (for posted grants):
+   - Full description (HTML stripped)
+   - Estimated funding + per-award calculation
+   - Award ceiling/floor
+   - Eligible applicant types
+   - Estimated posting/response/award dates
+   - Agency contact name, email, phone
+   - Program title from CFDA listing
+4. **Return** enriched detail object
+
+This endpoint is called on-demand when the user selects a grant, not batch-fetched. This keeps initial load fast while providing rich data when the user wants to dig deeper.
+
+### `POST /api/summarize`
+
+AI-powered grant recommendation:
+
+1. **Receive** grant + clinic profile + heuristic assessment
+2. **If OPENAI_API_KEY set:** Call gpt-4o-mini with structured prompt (8s timeout)
+3. **If no key or API fails:** Return heuristic-generated recommendation
+4. **Return** summary text + source tag ("ai" or "heuristic")
+
 ### Why Server-Side Scoring
 
 - Single round trip: client gets pre-scored, sorted results

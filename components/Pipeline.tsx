@@ -1,6 +1,7 @@
 "use client";
 
 import { PipelineItem } from "@/lib/types";
+import DeadlineBadge from "./DeadlineBadge";
 
 interface PipelineProps {
   items: PipelineItem[];
@@ -85,11 +86,9 @@ export default function Pipeline({
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-1">
+          <div className="flex items-center gap-3 mt-2">
             {item.grantDeadline && (
-              <p className="text-[10px] text-gray-400">
-                Deadline: {new Date(item.grantDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              </p>
+              <DeadlineBadge deadline={item.grantDeadline} />
             )}
             <p className="text-[10px] text-gray-300">
               Saved {new Date(item.savedAt).toLocaleDateString()}

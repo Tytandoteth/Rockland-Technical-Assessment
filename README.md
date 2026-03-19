@@ -4,10 +4,12 @@ A focused decision-support tool that helps FQHC CFOs answer: **"Which grants are
 
 ## What It Does
 
-- Fetches live grant opportunities from the Grants.gov API
+- Fetches live grant opportunities from the Grants.gov API with per-grant detail enrichment
 - Scores each grant against your clinic's profile using a transparent heuristic
-- Shows fit reasoning, risk flags, unknowns, and a recommended next step
-- Lets you save grants to a lightweight pipeline tracker
+- Enriches selected grants with full descriptions, funding amounts, eligibility, and agency contacts
+- Shows fit reasoning, risk flags (that auto-resolve when enriched data arrives), and recommended next steps
+- Optional AI-powered "Quick Take" summaries via OpenAI (with heuristic fallback)
+- Lightweight pipeline tracker with status management persisted in localStorage
 
 ## Why It Exists
 
@@ -15,7 +17,7 @@ CFOs at community health clinics spend 4-6 hours/week manually searching for gra
 
 ## Live Demo
 
-**Production URL:** https://rockland-ngxe4ljfq-tytan-5553s-projects.vercel.app
+**Production URL:** https://rockland-jmk2hihc6-tytan-5553s-projects.vercel.app
 
 ## Local Setup
 
@@ -44,7 +46,7 @@ Without the key, the "Quick Take" feature still works using a heuristic-generate
 ## Architecture Summary
 
 - **Next.js 16** with App Router — single-surface architecture
-- **Route handlers** — `/api/grants` (Grants.gov proxy + scoring), `/api/summarize` (AI summary with fallback)
+- **Route handlers** — `/api/grants` (search + score), `/api/grants/detail` (per-grant enrichment), `/api/summarize` (AI summary)
 - **Transparent heuristic scoring** — keyword overlap, agency relevance, deadline proximity → 0-100 score with human-readable reasoning
 - **Optional AI summaries** — gpt-4o-mini "Quick Take" with graceful heuristic fallback
 - **localStorage** for pipeline persistence — no database required
@@ -53,17 +55,21 @@ Without the key, the "Quick Take" feature still works using a heuristic-generate
 ### Data Flow
 
 ```
-Grants.gov API → Route Handler → Normalize → Score → Client → Render
-                                    ↑
-                            Clinic Profile
-                          (focus areas drive scoring)
+Grants.gov Search API → Route Handler → Normalize → Score → Client → Render
+                                           ↑                    │
+                                   Clinic Profile          Select Grant
+                                (focus areas drive scoring)      │
+                                                                 ▼
+                              Grants.gov Detail API → Enrich → Display
+                                                       (funding, eligibility, contacts)
 ```
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `app/api/grants/route.ts` | Grants.gov fetch + normalize + score (with retry) |
+| `app/api/grants/route.ts` | Grants.gov search + normalize + score (with retry) |
+| `app/api/grants/detail/route.ts` | Per-grant enrichment via fetchOpportunity |
 | `app/api/summarize/route.ts` | AI summary via OpenAI with heuristic fallback |
 | `lib/scoring.ts` | Transparent fit scoring heuristic |
 | `lib/normalize.ts` | Grants.gov → internal model conversion |

@@ -91,6 +91,23 @@
 - Updated AI_REFLECTION.md with final override reasoning
 - Updated README.md with env variable docs
 
+### 3:20–3:50 — Grant Detail Enrichment
+
+- Discovered Grants.gov `fetchOpportunity` endpoint — returns full synopsis, funding amounts, eligibility, contact info per grant
+- Built `POST /api/grants/detail` route to fetch and normalize enriched data
+- Wired auto-fetch into page.tsx — enriched data loads when user selects a grant
+- Updated GrantDetail to display enriched fields: funding with per-award calc, estimated dates, full description, eligibility, agency contact with mailto
+- Fixed numeric fields coming as strings from API (needed `Number()` parsing)
+- Added smart risk flag filtering — stale flags auto-clear when enriched data resolves them (e.g., "Funding not specified" disappears once funding data loads)
+- Fixed date format — API returns `"Mar 31, 2026 12:00:00 AM EDT"`, cleaned to `"Mar 31, 2026"`
+
+### 3:50–4:10 — Robustness Polish
+
+- Added pipeline fallback detail view — when a saved grant isn't in current search results, shows saved title/deadline/status/next step with explanatory notice
+- Created ErrorBoundary component wrapping root layout — catches render crashes with friendly "Reload" UI
+- Added `grantUrl` to PipelineItem — fallback view can link to Grants.gov
+- Updated all documentation to reflect final shipped state
+
 ## What Broke
 
 1. **Grants.gov API format** — oppStatuses uses pipe `|` not comma `,` separator. Cost ~10 minutes to debug.
@@ -98,13 +115,18 @@
 3. **HTML entities in API data** — Grant titles contained `&ndash;` and other HTML entities. Added decoder in normalization layer.
 4. **Middot rendering** — React doesn't render `&middot;` HTML entities in JSX text. Replaced with literal `·` character.
 
+5. **Enrichment numeric fields** — `estimatedFunding` came as string `"94000000"` from API, not number. `toLocaleString()` didn't add commas. Fixed with `Number()` parsing in detail route.
+6. **Enrichment date format** — `estSynopsisPostingDateStr` returned ugly `"2026-03-31-00-00-00"`. Used the non-Str field (`estSynopsisPostingDate: "Mar 31, 2026 12:00:00 AM EDT"`) and stripped the time portion.
+
 ## What Shipped
 
-- Real Grants.gov API integration (25 live health grants) with retry/backoff
+- Real Grants.gov API integration: search (25 health grants) + per-grant detail enrichment (funding, description, eligibility, contacts)
 - Transparent heuristic scoring with human-readable reasoning
 - AI-powered "Quick Take" summaries (OpenAI gpt-4o-mini with heuristic fallback)
-- Risk flags and confidence notes
-- Pipeline tracker with localStorage persistence and deadline display
+- Risk flags with smart resolution (flags auto-clear when enriched data fills gaps)
+- Pipeline tracker with localStorage persistence, deadline display, and fallback detail view
+- Error boundary for crash recovery
 - Refresh and retry controls for error recovery
-- Fallback data when API is unavailable
+- Retry with exponential backoff on Grants.gov API
+- Fallback to sample data when API is unavailable
 - Deployed to Vercel

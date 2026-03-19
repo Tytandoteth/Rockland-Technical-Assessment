@@ -2,36 +2,42 @@
 
 ## 1. What We Built
 
-A focused grant discovery tool that fetches real grants from Grants.gov, scores them against an FQHC clinic profile using a transparent heuristic, and lets the CFO save promising grants to a lightweight pipeline. The entire core loop — discover, qualify, decide, track — works in a single page in under 10 minutes.
+A focused grant discovery tool that fetches live grants from Grants.gov, enriches each with detailed funding/eligibility data, scores them against an FQHC clinic profile using a transparent heuristic, and lets the CFO save promising grants to a lightweight pipeline. The entire core loop — discover, qualify, decide, track — works in a single page in under 10 minutes.
 
-## 2. Hybrid AI Approach: Heuristic First, AI Second Opinion
+Key capabilities:
+- Real-time grant feed from Grants.gov (search + per-grant detail enrichment)
+- Transparent heuristic scoring with human-readable reasoning and risk flags
+- Optional AI-powered "Quick Take" summaries (OpenAI with heuristic fallback)
+- Pipeline tracker with status management and localStorage persistence
+- Retry/backoff logic and graceful fallback to sample data
 
-We built a hybrid qualification system:
-- **Primary layer:** Transparent heuristic scoring (keyword overlap, agency relevance, deadline proximity) — always visible, always fast, no API dependency
-- **Secondary layer:** Optional AI-powered "Quick Take" via `/api/summarize` — calls OpenAI gpt-4o-mini for a 2-3 sentence recommendation when the user clicks "Get AI-powered recommendation"
-- **Graceful degradation:** If no OPENAI_API_KEY is set or the API fails, the summary falls back to a heuristic-generated recommendation with a "Heuristic" badge. The demo never blocks.
+## 2. What We Cut
 
-This satisfies the CONTEXT.md requirement for an AI summary route while keeping the transparent heuristic as the primary decision-support layer — matching the CFO's need for trustworthy, explainable signal.
+- **Editable clinic profile** — Hardcoded a realistic FQHC profile. Editing would be nice but doesn't prove the core value proposition. In production, this would be a settings page.
+- **Multiple search queries** — We query the Health category only. Could fan out queries across behavioral health, substance abuse, rural health for broader coverage.
+- **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, or fit level. Chose not to because it adds UI complexity without proving the core "is this worth pursuing?" loop.
+- **Authentication / multi-user** — Single-user demo. Would need auth + database for production.
 
-## 3. What We Cut
+## 3. Hybrid AI Approach: Heuristic First, AI Second Opinion
 
-- **Editable clinic profile** — Hardcoded a realistic FQHC profile. Editing would be nice but doesn't prove the core value proposition.
-- **Individual grant detail fetching** — The search endpoint returns limited fields (no synopsis, no amounts for most grants). Would use the detail endpoint to fetch richer data per-grant with more time.
-- **Multiple search queries** — We query health grants only. Could fan out queries across behavioral health, substance abuse, rural health, etc. for broader coverage.
-- **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, fit level.
+We built a hybrid qualification system rather than making AI the primary layer:
+- **Primary:** Transparent heuristic scoring (keyword overlap, agency relevance, deadline proximity) — always visible, always fast, zero API dependency
+- **Secondary:** On-demand AI "Quick Take" via `/api/summarize` — calls gpt-4o-mini when the user clicks, falls back to heuristic if no key or API failure
 
-## 4. Why Single-Surface Architecture
+This reflects the CFO's need for trustworthy, explainable signal. The transcript emphasized "Which one is the source of truth?" — a heuristic you can trace beats an AI opinion you can't verify.
 
-One Next.js deployment handles everything: UI, API proxy, data normalization, scoring. No separate backend, no database, no cross-service communication. This is the simplest architecture that satisfies the requirements (real API call + structured data + persistence) and can be deployed in minutes. Adding a separate backend would have burned 30+ minutes on infrastructure with zero user value.
+## 4. Single-Surface Architecture with No External Database
 
-## 5. Why No Hosted Database
+One Next.js deployment handles everything: UI, API proxy, data normalization, scoring, AI summaries. No separate backend, no hosted database, no cross-service communication.
 
-localStorage is sufficient for a single-user demo. The pipeline data structure is simple (array of items with status). Adding Neon/Supabase/Postgres would require provisioning, connection strings, migrations, error handling — minimum 30 minutes of work that produces no visible user value. The data model is clean enough that migrating to a real DB later is straightforward.
+- **Why no backend:** Adding FastAPI/Railway would burn 30+ minutes on infrastructure with zero user value. Route handlers do everything we need.
+- **Why no database:** localStorage is sufficient for single-user pipeline tracking. The data model is clean enough to migrate to Postgres later. Adding Neon/Supabase would require provisioning, connection strings, and migrations — all wasted time for a demo.
+- **Why Vercel-only:** Zero-config deployment for Next.js. One command deploys everything.
 
-## 6. Technical Decision We'd Revisit: Scoring Data Richness
+## 5. Technical Decision We'd Revisit: Re-scoring After Enrichment
 
-The Grants.gov search endpoint returns minimal fields per hit — title, agency, dates, but no description, eligibility details, or funding amounts for most grants. Our scoring works with title + agency, but would be significantly more accurate with full grant descriptions.
+Currently, fit scores are computed from the search endpoint's limited fields (title + agency), then enriched detail (description, funding, eligibility) is fetched per-grant on click. The enriched data is displayed but doesn't retroactively update the fit score.
 
-**With more time:** After the initial search, fetch individual grant details for the top-scoring results using the Grants.gov opportunity detail endpoint. This would give us synopsis text, eligible applicant types, and award amounts — dramatically improving scoring confidence and the detail panel experience.
+**With more time:** Re-run the scoring heuristic after enrichment data arrives. This would give significantly more accurate scores — a grant with "FQHC" in its description would score higher than one with only a vaguely relevant title. We'd also batch-fetch detail for the top 10 grants on initial load to improve the list view scores.
 
-**Why we didn't:** The detail fetch would require either sequential API calls (slow) or batched requests (complexity). Given the 3-hour constraint, we chose to ship a working core loop with honest confidence notes ("Score based on title and agency only") rather than risk breaking the timeline on API reliability issues.
+**Why we didn't:** The current approach is honest — scores show confidence notes when based on limited data, and the enriched detail panel gives the CFO all the info needed to make a decision regardless of score accuracy.
