@@ -7,6 +7,10 @@ interface GrantDetailProps {
   assessment: GrantAssessment;
   isInPipeline: boolean;
   onSaveToPipeline: () => void;
+  aiSummary: string | null;
+  aiSummarySource: "ai" | "heuristic" | null;
+  aiSummaryLoading: boolean;
+  onRequestSummary: () => void;
 }
 
 function formatAmount(min?: number, max?: number): string {
@@ -23,6 +27,10 @@ export default function GrantDetail({
   assessment,
   isInPipeline,
   onSaveToPipeline,
+  aiSummary,
+  aiSummarySource,
+  aiSummaryLoading,
+  onRequestSummary,
 }: GrantDetailProps) {
   return (
     <div className="space-y-5">
@@ -74,6 +82,35 @@ export default function GrantDetail({
           <p className="text-xs text-emerald-600 mt-2 italic">
             {assessment.confidenceNotes}
           </p>
+        )}
+      </div>
+
+      {/* AI Summary / Second Opinion */}
+      <div className="bg-violet-50 border border-violet-100 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-violet-900">
+            Quick Take
+          </h3>
+          {aiSummarySource && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 text-violet-600 font-medium">
+              {aiSummarySource === "ai" ? "AI-generated" : "Heuristic"}
+            </span>
+          )}
+        </div>
+        {aiSummaryLoading ? (
+          <div className="flex items-center gap-2 text-sm text-violet-600">
+            <span className="inline-block w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+            Generating summary...
+          </div>
+        ) : aiSummary ? (
+          <p className="text-sm text-violet-800 leading-relaxed">{aiSummary}</p>
+        ) : (
+          <button
+            onClick={onRequestSummary}
+            className="text-sm text-violet-600 hover:text-violet-800 font-medium underline underline-offset-2"
+          >
+            Get AI-powered recommendation
+          </button>
         )}
       </div>
 

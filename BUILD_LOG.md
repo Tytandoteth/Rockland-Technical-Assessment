@@ -66,6 +66,31 @@
 - Deployed to Vercel (production)
 - Wrote README, PRODUCT_REQUIREMENTS, ARCHITECTURE, KEY_DECISIONS, BUILD_LOG, AI_REFLECTION
 
+### 2:40–3:20 — Finalization Phase
+
+#### AI Summary Integration
+- Added `POST /api/summarize` route (`app/api/summarize/route.ts`)
+  - Calls OpenAI gpt-4o-mini with clinic profile + grant context
+  - 8s timeout, graceful fallback to heuristic-generated summary
+  - Works without API key — falls back with "Heuristic" badge
+- Integrated "Quick Take" section into GrantDetail component
+  - On-demand: user clicks "Get AI-powered recommendation"
+  - Shows source badge: "AI-generated" or "Heuristic"
+  - Clears when switching between grants
+
+#### Reliability Improvements
+- Added retry with exponential backoff to Grants.gov route (2 retries, 1.5s base delay)
+  - Only retries on 5xx errors and network failures, not 4xx
+- Added "Refresh" button on grant list header
+- Added "Retry" button in error banner
+- Pipeline items now store and display grant deadline
+
+#### Documentation Updates
+- Updated KEY_DECISIONS.md with hybrid AI approach explanation
+- Updated BUILD_LOG.md with finalization timeline
+- Updated AI_REFLECTION.md with final override reasoning
+- Updated README.md with env variable docs
+
 ## What Broke
 
 1. **Grants.gov API format** — oppStatuses uses pipe `|` not comma `,` separator. Cost ~10 minutes to debug.
@@ -75,9 +100,11 @@
 
 ## What Shipped
 
-- Real Grants.gov API integration (25 live health grants)
+- Real Grants.gov API integration (25 live health grants) with retry/backoff
 - Transparent heuristic scoring with human-readable reasoning
+- AI-powered "Quick Take" summaries (OpenAI gpt-4o-mini with heuristic fallback)
 - Risk flags and confidence notes
-- Pipeline tracker with localStorage persistence
+- Pipeline tracker with localStorage persistence and deadline display
+- Refresh and retry controls for error recovery
 - Fallback data when API is unavailable
 - Deployed to Vercel

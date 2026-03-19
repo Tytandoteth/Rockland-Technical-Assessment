@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   GrantOpportunity,
   GrantAssessment,
@@ -29,47 +29,60 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"detail" | "pipeline">("detail");
 
+  // AI summary state
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiSummarySource, setAiSummarySource] = useState<"ai" | "heuristic" | null>(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const lastSummarizedGrantId = useRef<string | null>(null);
+
   const profile = DEFAULT_CLINIC_PROFILE;
 
-  // Fetch grants on mount
-  useEffect(() => {
-    async function fetchGrants() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/grants", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profile }),
-        });
+  // Fetch grants
+  const fetchGrants = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/grants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile }),
+      });
 
-        if (!res.ok) throw new Error("Failed to fetch grants");
+      if (!res.ok) throw new Error("Failed to fetch grants");
 
-        const data: GrantsApiResponse = await res.json();
-        setGrants(data.grants);
-        setAssessments(data.assessments);
-        setSource(data.source);
+      const data: GrantsApiResponse = await res.json();
+      setGrants(data.grants);
+      setAssessments(data.assessments);
+      setSource(data.source);
 
-        // Auto-select first grant
-        if (data.grants.length > 0) {
-          setSelectedGrantId(data.grants[0].id);
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load grants"
-        );
-      } finally {
-        setIsLoading(false);
+      // Auto-select first grant
+      if (data.grants.length > 0) {
+        setSelectedGrantId(data.grants[0].id);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load grants");
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchGrants();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchGrants();
+  }, [fetchGrants]);
 
   // Load pipeline from localStorage
   useEffect(() => {
     setPipeline(getPipeline());
   }, []);
+
+  // Clear AI summary when grant selection changes
+  useEffect(() => {
+    if (selectedGrantId !== lastSummarizedGrantId.current) {
+      setAiSummary(null);
+      setAiSummarySource(null);
+      setAiSummaryLoading(false);
+    }
+  }, [selectedGrantId]);
 
   const pipelineGrantIds = new Set(pipeline.map((p) => p.grantId));
 
@@ -77,12 +90,48 @@ export default function Home() {
   const selectedAssessment =
     assessments.find((a) => a.grantId === selectedGrantId) || null;
 
+  // AI summary request
+  const handleRequestSummary = useCallback(async () => {
+    if (!selectedGrant || !selectedAssessment) return;
+    setAiSummaryLoading(true);
+    lastSummarizedGrantId.current = selectedGrant.id;
+
+    try {
+      const res = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant: selectedGrant,
+          profile,
+          assessment: selectedAssessment,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Summary request failed");
+
+      const data = await res.json();
+      // Only set if this is still the selected grant
+      if (lastSummarizedGrantId.current === selectedGrant.id) {
+        setAiSummary(data.summary);
+        setAiSummarySource(data.source);
+      }
+    } catch {
+      if (lastSummarizedGrantId.current === selectedGrant.id) {
+        setAiSummary(selectedAssessment.recommendedAction);
+        setAiSummarySource("heuristic");
+      }
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  }, [selectedGrant, selectedAssessment]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSaveToPipeline = useCallback(() => {
     if (!selectedGrant || !selectedAssessment) return;
     const item: PipelineItem = {
       id: `pipeline-${Date.now()}`,
       grantId: selectedGrant.id,
       grantTitle: selectedGrant.title,
+      grantDeadline: selectedGrant.deadline || undefined,
       status: "To Review",
       nextStep: selectedAssessment.recommendedAction,
       savedAt: new Date().toISOString(),
@@ -134,7 +183,7 @@ export default function Home() {
               {profile.clinicName}
             </p>
             <p className="text-[10px] text-gray-400">
-              {profile.clinicType} &middot; {profile.state}
+              {profile.clinicType} · {profile.state}
             </p>
           </div>
         </div>
@@ -143,8 +192,14 @@ export default function Home() {
       {/* Error Banner */}
       {error && (
         <div className="max-w-7xl mx-auto px-6 mt-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 flex items-center justify-between">
+            <span>{error}</span>
+            <button
+              onClick={fetchGrants}
+              className="ml-3 px-3 py-1 text-xs font-semibold bg-red-100 hover:bg-red-200 rounded transition-colors"
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}
@@ -173,6 +228,15 @@ export default function Home() {
                     </span>
                   )}
                 </h2>
+                {!isLoading && (
+                  <button
+                    onClick={fetchGrants}
+                    className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                    title="Refresh grants from Grants.gov"
+                  >
+                    Refresh
+                  </button>
+                )}
               </div>
               <div className="max-h-[calc(100vh-420px)] overflow-y-auto pr-1">
                 <GrantList
@@ -231,6 +295,10 @@ export default function Home() {
                     assessment={selectedAssessment}
                     isInPipeline={pipelineGrantIds.has(selectedGrant.id)}
                     onSaveToPipeline={handleSaveToPipeline}
+                    aiSummary={aiSummary}
+                    aiSummarySource={aiSummarySource}
+                    aiSummaryLoading={aiSummaryLoading}
+                    onRequestSummary={handleRequestSummary}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-[400px] text-gray-400">

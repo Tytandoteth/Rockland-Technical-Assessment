@@ -4,23 +4,31 @@
 
 A focused grant discovery tool that fetches real grants from Grants.gov, scores them against an FQHC clinic profile using a transparent heuristic, and lets the CFO save promising grants to a lightweight pipeline. The entire core loop — discover, qualify, decide, track — works in a single page in under 10 minutes.
 
-## 2. What We Cut
+## 2. Hybrid AI Approach: Heuristic First, AI Second Opinion
 
-- **AI/LLM summaries** — Heuristic scoring is faster, cheaper, and more transparent. The CFO can see exactly why a grant scored high without wondering what the AI might have gotten wrong. Would add as a "deeper analysis" button with more time.
+We built a hybrid qualification system:
+- **Primary layer:** Transparent heuristic scoring (keyword overlap, agency relevance, deadline proximity) — always visible, always fast, no API dependency
+- **Secondary layer:** Optional AI-powered "Quick Take" via `/api/summarize` — calls OpenAI gpt-4o-mini for a 2-3 sentence recommendation when the user clicks "Get AI-powered recommendation"
+- **Graceful degradation:** If no OPENAI_API_KEY is set or the API fails, the summary falls back to a heuristic-generated recommendation with a "Heuristic" badge. The demo never blocks.
+
+This satisfies the CONTEXT.md requirement for an AI summary route while keeping the transparent heuristic as the primary decision-support layer — matching the CFO's need for trustworthy, explainable signal.
+
+## 3. What We Cut
+
 - **Editable clinic profile** — Hardcoded a realistic FQHC profile. Editing would be nice but doesn't prove the core value proposition.
 - **Individual grant detail fetching** — The search endpoint returns limited fields (no synopsis, no amounts for most grants). Would use the detail endpoint to fetch richer data per-grant with more time.
 - **Multiple search queries** — We query health grants only. Could fan out queries across behavioral health, substance abuse, rural health, etc. for broader coverage.
 - **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, fit level.
 
-## 3. Why Single-Surface Architecture
+## 4. Why Single-Surface Architecture
 
 One Next.js deployment handles everything: UI, API proxy, data normalization, scoring. No separate backend, no database, no cross-service communication. This is the simplest architecture that satisfies the requirements (real API call + structured data + persistence) and can be deployed in minutes. Adding a separate backend would have burned 30+ minutes on infrastructure with zero user value.
 
-## 4. Why No Hosted Database
+## 5. Why No Hosted Database
 
 localStorage is sufficient for a single-user demo. The pipeline data structure is simple (array of items with status). Adding Neon/Supabase/Postgres would require provisioning, connection strings, migrations, error handling — minimum 30 minutes of work that produces no visible user value. The data model is clean enough that migrating to a real DB later is straightforward.
 
-## 5. Technical Decision We'd Revisit: Scoring Data Richness
+## 6. Technical Decision We'd Revisit: Scoring Data Richness
 
 The Grants.gov search endpoint returns minimal fields per hit — title, agency, dates, but no description, eligibility details, or funding amounts for most grants. Our scoring works with title + agency, but would be significantly more accurate with full grant descriptions.
 

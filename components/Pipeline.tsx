@@ -85,9 +85,16 @@ export default function Pipeline({
             </p>
           )}
 
-          <p className="text-[10px] text-gray-300 mt-1">
-            Saved {new Date(item.savedAt).toLocaleDateString()}
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            {item.grantDeadline && (
+              <p className="text-[10px] text-gray-400">
+                Deadline: {new Date(item.grantDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+            )}
+            <p className="text-[10px] text-gray-300">
+              Saved {new Date(item.savedAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
       ))}
     </div>

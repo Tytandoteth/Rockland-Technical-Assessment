@@ -14,14 +14,14 @@ AI also assumed the search endpoint would return rich data (descriptions, amount
 
 ## Where We Intentionally Overrode AI
 
-**Heuristic scoring over AI/LLM summaries.** The initial project context files (CONTEXT.md) suggested using OpenAI for grant summaries. We overrode this in favor of a pure heuristic approach. Reasons:
+**Heuristic-first architecture over AI-first scoring.** The initial project context files (CONTEXT.md) suggested using OpenAI as the primary qualification layer. We overrode this — making transparent heuristic scoring the primary layer and AI summaries an optional second opinion. Reasons:
 
 1. **Transparency** — The CFO transcript themes emphasized trust and reliability. A heuristic score with visible reasoning ("Matches clinic focus areas: behavioral health, dental") is more trustworthy than an opaque AI assessment. The user can verify why a grant scored high.
 
-2. **Speed** — No API key management, no latency from LLM calls, no cost per request. The scoring runs in milliseconds, not seconds.
+2. **Speed** — The heuristic runs in milliseconds. No latency from LLM calls on every page load. The AI summary is available on-demand for grants the CFO wants a deeper take on.
 
-3. **Reliability** — One external API dependency (Grants.gov) is already a risk factor. Adding OpenAI as a second dependency doubles the failure surface. With a heuristic, if Grants.gov fails we fall back to sample data; the scoring always works.
+3. **Reliability** — One external API dependency (Grants.gov) is already a risk factor. Making the core scoring depend on OpenAI would double the failure surface. With the hybrid approach, the tool always works — AI summary is additive, not blocking.
 
-4. **Assessment fit** — The assessment evaluates "knowing when to override AI tools." Using AI to call AI felt like the wrong signal. A hand-crafted heuristic demonstrates product judgment and system design thinking.
+4. **Graceful degradation** — If no API key is configured or OpenAI is down, the "Quick Take" section falls back to a heuristic-generated recommendation with a "Heuristic" badge. The demo never breaks.
 
-This was the right call. The scoring is honest about its confidence level, flags unknowns explicitly, and gives the CFO a clear recommendation — which is what the user research called for.
+This was the right call. We later added the AI summary route (`/api/summarize`) to satisfy the CONTEXT.md requirement, but kept it as a secondary layer. The hybrid approach demonstrates both product judgment (knowing that trust matters more than AI magic for this user) and technical judgment (knowing when to add AI and when to lean on simpler, more explainable systems).

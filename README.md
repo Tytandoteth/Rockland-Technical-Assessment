@@ -27,11 +27,26 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Environment Variables (Optional)
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
+| `OPENAI_API_KEY` | Enables AI-powered "Quick Take" summaries via gpt-4o-mini | No — falls back to heuristic summary |
+
+Create a `.env.local` file:
+
+```bash
+OPENAI_API_KEY=sk-your-key-here
+```
+
+Without the key, the "Quick Take" feature still works using a heuristic-generated recommendation.
+
 ## Architecture Summary
 
 - **Next.js 16** with App Router — single-surface architecture
-- **Route handler** (`/api/grants`) proxies Grants.gov, normalizes data, runs fit scoring
+- **Route handlers** — `/api/grants` (Grants.gov proxy + scoring), `/api/summarize` (AI summary with fallback)
 - **Transparent heuristic scoring** — keyword overlap, agency relevance, deadline proximity → 0-100 score with human-readable reasoning
+- **Optional AI summaries** — gpt-4o-mini "Quick Take" with graceful heuristic fallback
 - **localStorage** for pipeline persistence — no database required
 - **Vercel** deployment — zero-config, instant
 
@@ -48,7 +63,8 @@ Grants.gov API → Route Handler → Normalize → Score → Client → Render
 
 | File | Purpose |
 |------|---------|
-| `app/api/grants/route.ts` | Grants.gov fetch + normalize + score |
+| `app/api/grants/route.ts` | Grants.gov fetch + normalize + score (with retry) |
+| `app/api/summarize/route.ts` | AI summary via OpenAI with heuristic fallback |
 | `lib/scoring.ts` | Transparent fit scoring heuristic |
 | `lib/normalize.ts` | Grants.gov → internal model conversion |
 | `lib/types.ts` | Core data types |
