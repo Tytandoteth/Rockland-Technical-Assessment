@@ -17,7 +17,7 @@ CFOs at community health clinics spend 4-6 hours/week manually searching for gra
 
 ## Live Demo
 
-**Production URL:** https://rockland-jmk2hihc6-tytan-5553s-projects.vercel.app
+**Production URL:** https://rockland-kjskdcp73-tytan-5553s-projects.vercel.app
 
 ## Local Setup
 
@@ -70,7 +70,8 @@ Grants.gov Search API → Route Handler → Normalize → Score → Client → R
 |------|---------|
 | `app/api/grants/route.ts` | Grants.gov search + normalize + score (with retry) |
 | `app/api/grants/detail/route.ts` | Per-grant enrichment via fetchOpportunity |
-| `app/api/summarize/route.ts` | AI summary via OpenAI with heuristic fallback |
+| `app/api/summarize/route.ts` | AI grant analysis via OpenAI with heuristic fallback |
+| `app/api/profile/summarize/route.ts` | AI profile enhancement for onboarding wizard |
 | `lib/scoring.ts` | Transparent fit scoring heuristic |
 | `lib/normalize.ts` | Grants.gov → internal model conversion |
 | `lib/types.ts` | Core data types |
@@ -102,6 +103,9 @@ Grants.gov Search API → Route Handler → Normalize → Score → Client → R
 - [Build Log](./BUILD_LOG.md)
 - [AI Reflection](./AI_REFLECTION.md)
 - [Talking Points](./TALKING_POINTS.md)
+- [Claude Code Transcript](./CLAUDE_CODE_TRANSCRIPT.md)
+- [ChatGPT Transcript](./CHATGPT_TRANSCRIPT.md)
+- [Cursor Transcript](./CURSOR_TRANSCRIPT.md)
 
 ## Deployment
 

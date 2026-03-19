@@ -108,6 +108,24 @@
 - Added `grantUrl` to PipelineItem — fallback view can link to Grants.gov
 - Updated all documentation to reflect final shipped state
 
+### 4:10–4:30 — Onboarding Wizard + Branding
+
+- Built 3-step OnboardingWizard (clinic basics → focus areas → patient population)
+- Built `/api/profile/summarize` route (OpenAI converts raw input to scoring-optimized keywords)
+- Added 3 sample clinic presets (Rural FQHC, Urban Safety-Net, Small Rural Clinic)
+- Applied Rockland brand identity: navy/teal/cream/green palette across all components
+- Upgraded AI analysis: CTA button, structured 5-section output, enriched data in prompt
+
+### 4:30–4:45 — Final Fixes + Deployment
+
+- Fixed AI stale closure (enrichedDetail not in useCallback deps — funding data wasn't reaching AI)
+- Fixed grant URLs (numeric ID instead of opp number)
+- Improved scoring thresholds (High >= 50, Medium >= 25) and added international grant penalty (-50)
+- Fixed deadline badge showing enriched dates when search endpoint returns none
+- Added assessment requirement coverage table to README
+- Created all 3 AI chat transcripts (Claude Code, ChatGPT, Cursor)
+- Made repo public for submission
+
 ## What Broke
 
 1. **Grants.gov API format** — oppStatuses uses pipe `|` not comma `,` separator. Cost ~10 minutes to debug.

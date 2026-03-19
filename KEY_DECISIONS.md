@@ -13,7 +13,6 @@ Key capabilities:
 
 ## 2. What We Cut
 
-- **Editable clinic profile** — Hardcoded a realistic FQHC profile. Editing would be nice but doesn't prove the core value proposition. In production, this would be a settings page.
 - **Multiple search queries** — We query the Health category only. Could fan out queries across behavioral health, substance abuse, rural health for broader coverage.
 - **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, or fit level. Chose not to because it adds UI complexity without proving the core "is this worth pursuing?" loop.
 - **SAM.gov integration** — Would add UEI verification and exclusion checks for eligibility confirmation. Grants.gov covers the core discovery workflow.
@@ -27,7 +26,18 @@ We built a hybrid qualification system rather than making AI the primary layer:
 
 This reflects the CFO's need for trustworthy, explainable signal. The transcript emphasized "Which one is the source of truth?" — a heuristic you can trace beats an AI opinion you can't verify.
 
-## 4. Single-Surface Architecture with No External Database
+## 4. Onboarding Wizard with AI Profile Enhancement
+
+Rather than hardcoding a clinic profile, we built a 3-step onboarding wizard that lets the user describe their clinic. OpenAI then converts raw input into scoring-optimized keywords — so a CFO who types "we serve migrant farmworkers with diabetes" gets keyword matches they wouldn't have thought to select from a checkbox list.
+
+- **3 quick steps:** clinic basics → focus areas (toggle pills) → patient population and needs
+- **AI enrichment:** raw input → 5-8 optimized focus areas + 10-15 scoring keywords
+- **Sample presets:** "Rural FQHC", "Urban Safety-Net", "Small Rural Clinic" for one-click setup
+- **Persistence:** profile saved in localStorage, wizard skipped on return visits, "Edit" button to re-enter
+
+This was initially scoped as a stretch goal but proved high-value: the AI-enhanced keywords meaningfully improve grant matching accuracy.
+
+## 5. Single-Surface Architecture with No External Database
 
 One Next.js deployment handles everything: UI, API proxy, data normalization, scoring, AI summaries. No separate backend, no hosted database, no cross-service communication.
 
@@ -35,7 +45,7 @@ One Next.js deployment handles everything: UI, API proxy, data normalization, sc
 - **Why no database:** localStorage is sufficient for single-user pipeline tracking. The data model is clean enough to migrate to Postgres later. Adding Neon/Supabase would require provisioning, connection strings, and migrations — all wasted time for a demo.
 - **Why Vercel-only:** Zero-config deployment for Next.js. One command deploys everything.
 
-## 5. Technical Decision We'd Revisit: Re-scoring After Enrichment
+## 6. Technical Decision We'd Revisit: Re-scoring After Enrichment
 
 Currently, fit scores are computed from the search endpoint's limited fields (title + agency), then enriched detail (description, funding, eligibility) is fetched per-grant on click. The enriched data is displayed but doesn't retroactively update the fit score.
 

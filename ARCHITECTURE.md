@@ -73,6 +73,17 @@ AI-powered grant recommendation:
 3. **If no key or API fails:** Return heuristic-generated recommendation
 4. **Return** summary text + source tag ("ai" or "heuristic")
 
+### `POST /api/profile/summarize`
+
+Onboarding profile refinement via AI:
+
+1. **Receive** raw clinic input from the onboarding wizard (name, state, type, focus areas, patient description, current grants, biggest need)
+2. **If OPENAI_API_KEY set:** Call gpt-4o-mini to generate scoring-optimized keywords, a structured patient population summary, and a profile summary
+3. **If no key or API fails:** Build keywords directly from the raw focus area selections
+4. **Return** refined profile with `focusAreas`, `patientPopulationNotes`, `scoringKeywords[]`, and `profileSummary`
+
+The `scoringKeywords` array (10-15 terms) is stored alongside the profile in localStorage and passed to the grants route to boost scoring relevance beyond the user's raw focus area selections.
+
 ### Why Server-Side Scoring
 
 - Single round trip: client gets pre-scored, sorted results
