@@ -15,7 +15,6 @@ const FQHC_CORE_KEYWORDS = [
   "healthcare",
 ];
 
-// Agencies highly relevant to FQHCs
 const PRIORITY_AGENCIES = [
   "hrsa",
   "health resources",
@@ -62,6 +61,26 @@ const ELIGIBLE_ORG_SIGNALS = [
   "health department",
 ];
 
+// International/foreign grant signals — these are irrelevant to domestic FQHCs
+const INTERNATIONAL_KEYWORDS = [
+  "ukraine",
+  "india",
+  "uganda",
+  "botswana",
+  "nigeria",
+  "kenya",
+  "tanzania",
+  "mozambique",
+  "zambia",
+  "pepfar",
+  "africa",
+  "asia",
+  "international",
+  "foreign",
+  "global health",
+  "president's emergency plan",
+];
+
 function countKeywordMatches(text: string, keywords: string[]): number {
   const lower = text.toLowerCase();
   return keywords.filter((k) => lower.includes(k)).length;
@@ -99,11 +118,18 @@ export function scoreGrant(
   const reasons: string[] = [];
   const riskFlags: string[] = [];
 
+  // 0. International grant penalty — these are irrelevant to domestic FQHCs
+  const intlMatches = getMatchedKeywords(searchText, INTERNATIONAL_KEYWORDS);
+  if (intlMatches.length > 0) {
+    score -= 50;
+    riskFlags.push(`International/foreign grant (${intlMatches[0]}) — likely not applicable to domestic FQHCs`);
+  }
+
   // 1. Focus area keyword overlap (up to 40 pts)
   const focusMatches = profile.focusAreas.filter((area) =>
     searchText.includes(area.toLowerCase())
   );
-  const focusScore = Math.min(40, focusMatches.length * 12);
+  const focusScore = Math.min(40, focusMatches.length * 15);
   score += focusScore;
   if (focusMatches.length > 0) {
     reasons.push(
@@ -111,17 +137,17 @@ export function scoreGrant(
     );
   }
 
-  // 2. FQHC/community health signals (up to 20 pts)
+  // 2. FQHC/community health signals (up to 25 pts)
   const coreMatches = countKeywordMatches(searchText, FQHC_CORE_KEYWORDS);
-  const coreScore = Math.min(20, coreMatches * 10);
+  const coreScore = Math.min(25, coreMatches * 10);
   score += coreScore;
   if (coreMatches > 0) {
     reasons.push("Directly relevant to FQHCs/community health centers");
   }
 
-  // 3. Population/topic relevance (up to 15 pts)
+  // 3. Population/topic relevance (up to 20 pts)
   const popMatches = getMatchedKeywords(searchText, POPULATION_KEYWORDS);
-  const popScore = Math.min(15, popMatches.length * 5);
+  const popScore = Math.min(20, popMatches.length * 7);
   score += popScore;
   if (popMatches.length > 0) {
     reasons.push(
@@ -129,10 +155,10 @@ export function scoreGrant(
     );
   }
 
-  // 3b. AI-enhanced keyword matching (up to 10 pts bonus)
+  // 3b. AI-enhanced keyword matching (up to 15 pts bonus)
   if (extraKeywords && extraKeywords.length > 0) {
     const extraMatches = getMatchedKeywords(searchText, extraKeywords);
-    const extraScore = Math.min(10, extraMatches.length * 3);
+    const extraScore = Math.min(15, extraMatches.length * 5);
     score += extraScore;
     if (extraMatches.length > 0 && focusMatches.length === 0) {
       reasons.push(
@@ -192,10 +218,10 @@ export function scoreGrant(
   // Clamp score
   score = Math.min(100, Math.max(0, score));
 
-  // Determine label
+  // Determine label — adjusted thresholds for realistic score distribution
   let fitLabel: "High" | "Medium" | "Low";
-  if (score >= 70) fitLabel = "High";
-  else if (score >= 40) fitLabel = "Medium";
+  if (score >= 50) fitLabel = "High";
+  else if (score >= 25) fitLabel = "Medium";
   else fitLabel = "Low";
 
   // Build fit reason
