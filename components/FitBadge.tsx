@@ -5,9 +5,9 @@ interface FitBadgeProps {
 
 export default function FitBadge({ label, score }: FitBadgeProps) {
   const styles = {
-    High: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    Medium: "bg-amber-100 text-amber-800 border-amber-200",
-    Low: "bg-gray-100 text-gray-600 border-gray-200",
+    High: "bg-rockland-green text-white border-rockland-green",
+    Medium: "bg-rockland-teal text-white border-rockland-teal",
+    Low: "bg-rockland-gray text-rockland-navy border-rockland-gray",
   };
 
   return (

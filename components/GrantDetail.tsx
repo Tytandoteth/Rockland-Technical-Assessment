@@ -72,7 +72,6 @@ export default function GrantDetail({
     ? enrichedDetail.applicantTypes.join(", ")
     : grant.eligibilityText;
 
-  // Filter out risk flags that are resolved by enriched data
   const riskFlags = enrichedDetail
     ? assessment.riskFlags.filter((flag) => {
         if (enrichedDetail.estimatedFunding && flag.includes("Funding amount not specified")) return false;
@@ -91,43 +90,43 @@ export default function GrantDetail({
           <FitBadge label={assessment.fitLabel} score={assessment.fitScore} />
           <DeadlineBadge deadline={grant.deadline} />
           {enrichedLoading && (
-            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-              <span className="inline-block w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+            <span className="text-[10px] text-rockland-navy/40 flex items-center gap-1">
+              <span className="inline-block w-3 h-3 border border-rockland-gray border-t-rockland-teal rounded-full animate-spin" />
               Loading details...
             </span>
           )}
         </div>
-        <h2 className="text-lg font-bold text-gray-900 leading-tight">
+        <h2 className="text-lg font-bold text-rockland-navy leading-tight">
           {grant.title}
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-rockland-navy/60 mt-1">
           {grant.agency}
           {enrichedDetail?.programTitle && (
-            <span className="text-gray-400"> · {enrichedDetail.programTitle}</span>
+            <span className="text-rockland-navy/40"> · {enrichedDetail.programTitle}</span>
           )}
         </p>
       </div>
 
       {/* Key Facts */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
+        <div className="bg-rockland-cream rounded-lg p-3">
+          <p className="text-[10px] uppercase tracking-wide text-rockland-navy/40 font-semibold mb-0.5">
             Funding
           </p>
-          <p className="text-sm font-semibold text-gray-800">
+          <p className="text-sm font-semibold text-rockland-navy">
             {formatFunding(enrichedDetail, grant)}
           </p>
           {enrichedDetail?.numberOfAwards && (
-            <p className="text-[10px] text-gray-400 mt-0.5">
+            <p className="text-[10px] text-rockland-navy/40 mt-0.5">
               {enrichedDetail.numberOfAwards} expected award{enrichedDetail.numberOfAwards !== 1 ? "s" : ""}
             </p>
           )}
         </div>
-        <div className="bg-gray-50 rounded-lg p-3">
-          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
+        <div className="bg-rockland-cream rounded-lg p-3">
+          <p className="text-[10px] uppercase tracking-wide text-rockland-navy/40 font-semibold mb-0.5">
             Deadline
           </p>
-          <p className="text-sm font-semibold text-gray-800">
+          <p className="text-sm font-semibold text-rockland-navy">
             {grant.deadline
               ? new Date(grant.deadline).toLocaleDateString("en-US", {
                   month: "long",
@@ -147,43 +146,43 @@ export default function GrantDetail({
       </div>
 
       {/* Why This Fits */}
-      <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-emerald-900 mb-2">
+      <div className="bg-rockland-green/10 border border-rockland-green/20 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-rockland-green mb-2">
           Why This Fits Your Clinic
         </h3>
-        <p className="text-sm text-emerald-800">{assessment.fitReason}</p>
+        <p className="text-sm text-rockland-navy">{assessment.fitReason}</p>
         {assessment.confidenceNotes && !enrichedDetail && (
-          <p className="text-xs text-emerald-600 mt-2 italic">
+          <p className="text-xs text-rockland-green/70 mt-2 italic">
             {assessment.confidenceNotes}
           </p>
         )}
       </div>
 
       {/* AI Summary / Second Opinion */}
-      <div className="bg-violet-50 border border-violet-100 rounded-lg p-4">
+      <div className="bg-rockland-teal/10 border border-rockland-teal/20 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-violet-900">
+          <h3 className="text-sm font-semibold text-rockland-teal">
             Quick Take
           </h3>
           {aiSummarySource && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 text-violet-600 font-medium">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rockland-teal/15 text-rockland-teal font-medium">
               {aiSummarySource === "ai" ? "AI-generated" : "Heuristic"}
             </span>
           )}
         </div>
         {aiSummaryLoading ? (
-          <div className="flex items-center gap-2 text-sm text-violet-600">
-            <span className="inline-block w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
+          <div className="flex items-center gap-2 text-sm text-rockland-teal">
+            <span className="inline-block w-4 h-4 border-2 border-rockland-teal/30 border-t-rockland-teal rounded-full animate-spin" />
             Generating summary...
           </div>
         ) : aiSummary ? (
-          <p className="text-sm text-violet-800 leading-relaxed">{aiSummary}</p>
+          <p className="text-sm text-rockland-navy leading-relaxed">{aiSummary}</p>
         ) : (
           <button
             onClick={onRequestSummary}
-            className="text-sm text-violet-600 hover:text-violet-800 font-medium underline underline-offset-2"
+            className="text-sm text-rockland-teal hover:text-rockland-teal/80 font-medium underline underline-offset-2"
           >
-            Get AI-powered recommendation
+            Get AI-powered recommendation →
           </button>
         )}
       </div>
@@ -209,23 +208,23 @@ export default function GrantDetail({
       )}
 
       {/* Recommended Next Step */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-blue-900 mb-1">
+      <div className="bg-rockland-navy/5 border border-rockland-navy/10 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-rockland-navy mb-1">
           Recommended Next Step
         </h3>
-        <p className="text-sm text-blue-800">{assessment.recommendedAction}</p>
+        <p className="text-sm text-rockland-navy/80">{assessment.recommendedAction}</p>
       </div>
 
-      {/* Description (from enriched or original) */}
+      {/* Description */}
       {description && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">
+          <h3 className="text-sm font-semibold text-rockland-navy mb-1">
             Grant Description
             {enrichedDetail?.description && (
-              <span className="text-[10px] text-gray-400 font-normal ml-2">from Grants.gov</span>
+              <span className="text-[10px] text-rockland-navy/40 font-normal ml-2">from Grants.gov</span>
             )}
           </h3>
-          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-rockland-navy/70 leading-relaxed whitespace-pre-line">
             {description.length > 800
               ? description.slice(0, 800) + "..."
               : description}
@@ -236,23 +235,23 @@ export default function GrantDetail({
       {/* Eligibility */}
       {eligibility && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">
+          <h3 className="text-sm font-semibold text-rockland-navy mb-1">
             Eligibility
           </h3>
-          <p className="text-sm text-gray-600">{eligibility}</p>
+          <p className="text-sm text-rockland-navy/70">{eligibility}</p>
         </div>
       )}
 
-      {/* Contact Info (from enriched) */}
+      {/* Contact */}
       {enrichedDetail?.contactName && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">
+          <h3 className="text-sm font-semibold text-rockland-navy mb-1">
             Agency Contact
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-rockland-navy/70">
             {enrichedDetail.contactName}
             {enrichedDetail.contactEmail && (
-              <> · <a href={`mailto:${enrichedDetail.contactEmail}`} className="text-blue-600 hover:underline">{enrichedDetail.contactEmail}</a></>
+              <> · <a href={`mailto:${enrichedDetail.contactEmail}`} className="text-rockland-teal hover:underline">{enrichedDetail.contactEmail}</a></>
             )}
           </p>
         </div>
@@ -263,12 +262,12 @@ export default function GrantDetail({
         {!isInPipeline ? (
           <button
             onClick={onSaveToPipeline}
-            className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-rockland-green text-white text-sm font-semibold rounded-lg hover:bg-rockland-green/90 transition-colors"
           >
-            Save to Pipeline
+            Save to Pipeline →
           </button>
         ) : (
-          <div className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-500 text-sm font-semibold rounded-lg text-center">
+          <div className="flex-1 px-4 py-2.5 bg-rockland-gray text-rockland-navy/50 text-sm font-semibold rounded-lg text-center">
             Already in Pipeline
           </div>
         )}
@@ -277,9 +276,9 @@ export default function GrantDetail({
             href={grant.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2.5 border border-rockland-gray text-rockland-navy text-sm font-semibold rounded-lg hover:bg-rockland-cream transition-colors"
           >
-            View on Grants.gov
+            View on Grants.gov →
           </a>
         )}
       </div>

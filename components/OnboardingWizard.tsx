@@ -175,17 +175,17 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8 max-w-lg w-full">
+    <div className="min-h-screen bg-rockland-cream flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl border border-rockland-gray shadow-lg p-8 max-w-lg w-full">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-rockland-navy">
             Rockland
-            <span className="text-blue-600 ml-1.5 text-sm font-medium">
+            <span className="text-rockland-teal ml-1.5 text-sm font-medium">
               Grant Discovery
             </span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-rockland-navy/60 mt-1">
             Tell us about your clinic so we can find the best grants for you.
           </p>
           {/* Progress */}
@@ -194,7 +194,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  s <= step ? "bg-blue-600" : "bg-gray-200"
+                  s <= step ? "bg-rockland-teal" : "bg-rockland-gray"
                 }`}
               />
             ))}
@@ -215,7 +215,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <button
                   key={preset.label}
                   onClick={() => loadPreset(preset)}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
+                  className="px-3 py-1.5 text-xs font-medium bg-rockland-cream text-rockland-navy/70 border border-rockland-gray rounded-lg hover:bg-rockland-teal/10 hover:border-rockland-teal/30 hover:text-rockland-teal transition-all"
                 >
                   {preset.label}
                 </button>
@@ -227,12 +227,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Step 1: Basics */}
         {step === 1 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-rockland-navy">
               Clinic Basics
             </h2>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Clinic Name
               </label>
               <input
@@ -240,19 +240,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 value={clinicName}
                 onChange={(e) => setClinicName(e.target.value)}
                 placeholder="e.g., Sunrise Community Health Center"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal focus:border-transparent"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">
+                <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                   State
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal bg-white"
                 >
                   <option value="">Select state</option>
                   {US_STATES.map((s) => (
@@ -261,13 +261,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">
+                <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                   Clinic Type
                 </label>
                 <select
                   value={clinicType}
                   onChange={(e) => setClinicType(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal bg-white"
                 >
                   {CLINIC_TYPES.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -277,13 +277,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Staff Size
               </label>
               <select
                 value={staffSize}
                 onChange={(e) => setStaffSize(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal bg-white"
               >
                 {STAFF_SIZES.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -293,7 +293,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
             <button
               onClick={() => setStep(2)}
-              className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors mt-2"
+              className="w-full px-4 py-2.5 bg-rockland-green text-white text-sm font-semibold rounded-lg hover:bg-rockland-green/90 transition-colors mt-2"
             >
               Continue
             </button>
@@ -303,7 +303,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Step 2: Focus Areas */}
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-rockland-navy">
               What does your clinic focus on?
             </h2>
             <p className="text-xs text-gray-500">
@@ -317,8 +317,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   onClick={() => toggleFocusArea(area)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${
                     selectedFocusAreas.includes(area)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                      ? "bg-rockland-green text-white border-blue-600"
+                      : "bg-white text-rockland-navy/70 border-rockland-gray hover:border-rockland-teal"
                   }`}
                 >
                   {area}
@@ -327,7 +327,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Other focus area (optional)
               </label>
               <input
@@ -335,20 +335,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 value={otherFocusArea}
                 onChange={(e) => setOtherFocusArea(e.target.value)}
                 placeholder="e.g., refugee health, school-based clinics"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal"
               />
             </div>
 
             <div className="flex gap-3 mt-2">
               <button
                 onClick={() => setStep(1)}
-                className="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2.5 border border-rockland-gray text-rockland-navy text-sm font-semibold rounded-lg hover:bg-rockland-cream transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep(3)}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-rockland-green text-white text-sm font-semibold rounded-lg hover:bg-rockland-green/90 transition-colors"
               >
                 Continue
               </button>
@@ -359,12 +359,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Step 3: Population & Needs */}
         {step === 3 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-rockland-navy">
               Tell us about your patients and needs
             </h2>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Who do you serve?
               </label>
               <textarea
@@ -372,12 +372,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 onChange={(e) => setPatientDescription(e.target.value)}
                 placeholder="e.g., Low-income families, Medicaid patients, rural communities with high rates of diabetes and behavioral health needs..."
                 rows={3}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal resize-none"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Any current or recent grants? (optional)
               </label>
               <input
@@ -385,12 +385,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 value={currentGrants}
                 onChange={(e) => setCurrentGrants(e.target.value)}
                 placeholder="e.g., HRSA Health Center Program, SAMHSA block grant"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium text-rockland-navy/70 block mb-1">
                 Biggest funding need right now? (optional)
               </label>
               <input
@@ -398,21 +398,21 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 value={biggestNeed}
                 onChange={(e) => setBiggestNeed(e.target.value)}
                 placeholder="e.g., Expanding behavioral health services, new dental clinic"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-rockland-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-rockland-teal"
               />
             </div>
 
             <div className="flex gap-3 mt-2">
               <button
                 onClick={() => setStep(2)}
-                className="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2.5 border border-rockland-gray text-rockland-navy text-sm font-semibold rounded-lg hover:bg-rockland-cream transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-rockland-green text-white text-sm font-semibold rounded-lg hover:bg-rockland-green/90 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -442,7 +442,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             localStorage.setItem("rockland-clinic-profile", JSON.stringify(defaultProfile));
             onComplete(defaultProfile);
           }}
-          className="w-full mt-4 text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
+          className="w-full mt-4 text-xs text-rockland-navy/40 hover:text-rockland-navy/60 transition-colors text-center"
         >
           Skip — use sample clinic profile
         </button>

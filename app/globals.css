@@ -3,10 +3,20 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* Rockland brand colors */
+  --color-rockland-navy: #1B365D;
+  --color-rockland-navy-dark: #0F2A4A;
+  --color-rockland-teal: #4A90A4;
+  --color-rockland-cream: #F5F3EF;
+  --color-rockland-green: #2D6A4F;
+  --color-rockland-gray: #E8E6E1;
 }
 
 body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  color: var(--color-rockland-navy);
 }
 
 /* Utility for line clamping */

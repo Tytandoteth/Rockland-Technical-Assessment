@@ -259,26 +259,26 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-rockland-cream">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-rockland-gray px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-rockland-navy">
               Rockland
-              <span className="text-blue-600 ml-1.5 text-sm font-medium">
+              <span className="text-rockland-teal ml-1.5 text-sm font-medium">
                 Grant Discovery
               </span>
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-rockland-navy/40 mt-0.5">
               Which grants are worth your attention right now?
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-rockland-navy/70 font-medium">
               {profile.clinicName}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[10px] text-rockland-navy/40">
               {profile.clinicType} · {profile.state}
             </p>
           </div>
@@ -306,14 +306,14 @@ export default function Home() {
           {/* Left: Clinic Profile + Grant List */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {/* Clinic Profile */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-xl border border-rockland-gray p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">
+                <h2 className="text-xs uppercase tracking-wide text-rockland-navy/40 font-semibold">
                   Your Clinic Profile
                 </h2>
                 <button
                   onClick={handleEditProfile}
-                  className="text-[10px] text-blue-500 hover:text-blue-700 font-medium transition-colors"
+                  className="text-[10px] text-rockland-teal hover:text-rockland-teal/70 font-medium transition-colors"
                 >
                   Edit
                 </button>
@@ -324,10 +324,10 @@ export default function Home() {
             {/* Grant List */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-700">
+                <h2 className="text-sm font-semibold text-rockland-navy">
                   Recommended Grants
                   {!isLoading && (
-                    <span className="text-gray-400 font-normal ml-1.5">
+                    <span className="text-rockland-navy/40 font-normal ml-1.5">
                       ({grants.length})
                     </span>
                   )}
@@ -335,7 +335,7 @@ export default function Home() {
                 {!isLoading && (
                   <button
                     onClick={() => fetchGrants(profile)}
-                    className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                    className="text-xs text-rockland-teal/60 hover:text-rockland-teal font-medium transition-colors"
                     title="Refresh grants from Grants.gov"
                   >
                     Refresh
@@ -362,13 +362,13 @@ export default function Home() {
           {/* Right: Detail + Pipeline */}
           <div className="col-span-12 lg:col-span-8">
             {/* Tabs */}
-            <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+            <div className="flex gap-1 mb-4 bg-rockland-gray/50 p-1 rounded-lg w-fit">
               <button
                 onClick={() => setActiveTab("detail")}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTab === "detail"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-white text-rockland-navy shadow-sm"
+                    : "text-rockland-navy/50 hover:text-rockland-navy"
                 }`}
               >
                 Grant Detail
@@ -377,13 +377,13 @@ export default function Home() {
                 onClick={() => setActiveTab("pipeline")}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTab === "pipeline"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-white text-rockland-navy shadow-sm"
+                    : "text-rockland-navy/50 hover:text-rockland-navy"
                 }`}
               >
                 Pipeline
                 {pipeline.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full">
+                  <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-rockland-teal/15 text-rockland-teal rounded-full">
                     {pipeline.length}
                   </span>
                 )}
@@ -391,7 +391,7 @@ export default function Home() {
             </div>
 
             {/* Content */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 min-h-[400px]">
+            <div className="bg-white rounded-xl border border-rockland-gray p-6 min-h-[400px]">
               {activeTab === "detail" ? (
                 selectedGrant && selectedAssessment ? (
                   <GrantDetail
@@ -413,13 +413,13 @@ export default function Home() {
                         This grant is no longer in the current search results. Showing saved info.
                       </p>
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedPipelineItem.grantTitle}</h2>
+                    <h2 className="text-lg font-bold text-rockland-navy">{selectedPipelineItem.grantTitle}</h2>
                     {selectedPipelineItem.grantDeadline && (
-                      <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="bg-rockland-cream rounded-lg p-3">
                         <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
                           Deadline
                         </p>
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className="text-sm font-semibold text-rockland-navy">
                           {new Date(selectedPipelineItem.grantDeadline).toLocaleDateString("en-US", {
                             month: "long",
                             day: "numeric",
@@ -428,11 +428,11 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-rockland-cream rounded-lg p-3">
                       <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
                         Pipeline Status
                       </p>
-                      <p className="text-sm font-semibold text-gray-800">{selectedPipelineItem.status}</p>
+                      <p className="text-sm font-semibold text-rockland-navy">{selectedPipelineItem.status}</p>
                     </div>
                     {selectedPipelineItem.nextStep && (
                       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
@@ -445,14 +445,14 @@ export default function Home() {
                         href={selectedPipelineItem.grantUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                        className="inline-block px-4 py-2.5 border border-rockland-gray text-rockland-navy text-sm font-semibold rounded-lg hover:bg-rockland-cream transition-colors"
                       >
                         View on Grants.gov
                       </a>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[400px] text-gray-400">
+                  <div className="flex items-center justify-center h-[400px] text-rockland-navy/40">
                     <div className="text-center">
                       <p className="text-lg font-medium mb-1">
                         Select a grant to review
@@ -466,7 +466,7 @@ export default function Home() {
                 )
               ) : (
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-700 mb-4">
+                  <h2 className="text-sm font-semibold text-rockland-navy mb-4">
                     Your Grant Pipeline
                   </h2>
                   <Pipeline

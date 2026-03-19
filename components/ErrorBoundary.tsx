@@ -27,17 +27,17 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-8 max-w-md text-center">
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
+        <div className="min-h-screen bg-rockland-cream flex items-center justify-center p-6">
+          <div className="bg-white rounded-xl border border-rockland-gray p-8 max-w-md text-center">
+            <h1 className="text-xl font-bold text-rockland-navy mb-2">
               Something went wrong
             </h1>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-rockland-navy/60 mb-6">
               An unexpected error occurred. Please reload the page to try again.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2.5 bg-rockland-green text-white text-sm font-semibold rounded-lg hover:bg-rockland-green/90 transition-colors"
             >
               Reload Page
             </button>

@@ -18,10 +18,10 @@ const STATUSES: PipelineItem["status"][] = [
 ];
 
 const STATUS_COLORS: Record<PipelineItem["status"], string> = {
-  "To Review": "bg-gray-100 text-gray-700 border-gray-200",
-  Interested: "bg-blue-100 text-blue-700 border-blue-200",
-  Applying: "bg-purple-100 text-purple-700 border-purple-200",
-  Submitted: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "To Review": "bg-rockland-gray text-rockland-navy border-rockland-gray",
+  Interested: "bg-rockland-teal/20 text-rockland-teal border-rockland-teal/30",
+  Applying: "bg-rockland-navy/10 text-rockland-navy border-rockland-navy/20",
+  Submitted: "bg-rockland-green/20 text-rockland-green border-rockland-green/30",
 };
 
 export default function Pipeline({
@@ -32,7 +32,7 @@ export default function Pipeline({
 }: PipelineProps) {
   if (items.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-rockland-navy/40">
         <p className="text-sm font-medium">No grants saved yet</p>
         <p className="text-xs mt-1">
           Save grants from the list to track your pipeline
@@ -46,12 +46,12 @@ export default function Pipeline({
       {items.map((item) => (
         <div
           key={item.id}
-          className="bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors"
+          className="bg-white border border-rockland-gray rounded-xl p-3 hover:border-rockland-teal/30 transition-colors"
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <button
               onClick={() => onSelectGrant(item.grantId)}
-              className="text-sm font-medium text-gray-900 hover:text-blue-600 text-left leading-tight line-clamp-2"
+              className="text-sm font-medium text-rockland-navy hover:text-rockland-teal text-left leading-tight line-clamp-2"
             >
               {item.grantTitle}
             </button>
@@ -72,7 +72,7 @@ export default function Pipeline({
                 className={`px-2 py-0.5 text-[11px] font-medium rounded-full border transition-all ${
                   item.status === status
                     ? STATUS_COLORS[status]
-                    : "bg-white text-gray-400 border-gray-100 hover:border-gray-300"
+                    : "bg-white text-rockland-navy/40 border-rockland-gray/50 hover:border-rockland-teal/30"
                 }`}
               >
                 {status}

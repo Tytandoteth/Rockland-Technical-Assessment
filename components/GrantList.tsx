@@ -26,7 +26,7 @@ export default function GrantList({
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="h-32 bg-gray-100 rounded-lg animate-pulse"
+            className="h-32 bg-rockland-gray/50 rounded-xl animate-pulse"
           />
         ))}
       </div>
@@ -35,7 +35,7 @@ export default function GrantList({
 
   if (grants.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-rockland-navy/50">
         <p className="text-lg font-medium mb-1">No grants found</p>
         <p className="text-sm">Try adjusting your clinic profile focus areas</p>
       </div>

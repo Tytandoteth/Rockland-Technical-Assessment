@@ -33,37 +33,37 @@ export default function GrantCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-4 border rounded-lg transition-all hover:shadow-md ${
+      className={`w-full text-left p-4 border rounded-xl transition-all hover:shadow-md ${
         isSelected
-          ? "border-blue-500 bg-blue-50 shadow-md"
-          : "border-gray-200 bg-white hover:border-gray-300"
+          ? "border-rockland-teal bg-rockland-teal/5 shadow-md"
+          : "border-rockland-gray bg-white hover:border-rockland-teal/40"
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <FitBadge label={assessment.fitLabel} score={assessment.fitScore} />
         {isInPipeline && (
-          <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
+          <span className="text-[10px] px-1.5 py-0.5 bg-rockland-teal/15 text-rockland-teal rounded font-medium">
             In Pipeline
           </span>
         )}
       </div>
 
-      <h3 className="text-sm font-semibold text-gray-900 leading-tight mb-1 line-clamp-2">
+      <h3 className="text-sm font-semibold text-rockland-navy leading-tight mb-1 line-clamp-2">
         {grant.title}
       </h3>
 
-      <p className="text-xs text-gray-500 mb-2">{grant.agency}</p>
+      <p className="text-xs text-rockland-navy/60 mb-2">{grant.agency}</p>
 
       <div className="flex items-center justify-between gap-2">
         <DeadlineBadge deadline={grant.deadline} />
         {(grant.amountMin || grant.amountMax) && (
-          <span className="text-xs font-medium text-gray-600">
+          <span className="text-xs font-medium text-rockland-navy/70">
             {formatAmount(grant.amountMin, grant.amountMax)}
           </span>
         )}
       </div>
 
-      <p className="text-xs text-gray-500 mt-2 line-clamp-1">
+      <p className="text-xs text-rockland-navy/50 mt-2 line-clamp-1">
         {assessment.fitReason.split(".")[0]}
       </p>
     </button>
