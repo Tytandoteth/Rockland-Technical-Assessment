@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeGrantsResponse } from "@/lib/normalize";
-import { scoreGrant } from "@/lib/scoring";
+import { scoreGrant, shouldExcludeInternationalNoise } from "@/lib/scoring";
 import { DEFAULT_CLINIC_PROFILE } from "@/lib/clinic-profile";
 import { FALLBACK_GRANTS } from "@/lib/fallback-grants";
 import { ClinicProfile, GrantsApiResponse, GrantOpportunity, GrantAssessment } from "@/lib/types";
+import { getDb, isDatabaseConfigured } from "@/lib/db";
 
 const GRANTS_GOV_API = "https://api.grants.gov/v1/api/search2";
 const MAX_RETRIES = 2;
@@ -63,6 +64,7 @@ async function fetchWithRetry(body: object, retries: number = MAX_RETRIES): Prom
 export async function POST(request: NextRequest) {
   let profile: ClinicProfile = DEFAULT_CLINIC_PROFILE;
   let scoringKeywords: string[] = [];
+  let searchKeyword = "community health";
 
   try {
     const body = await request.json();
@@ -70,6 +72,9 @@ export async function POST(request: NextRequest) {
       profile = body.profile;
       // AI-generated scoring keywords stored alongside profile
       scoringKeywords = body.profile.scoringKeywords || [];
+    }
+    if (body.keyword && typeof body.keyword === "string") {
+      searchKeyword = body.keyword.trim();
     }
   } catch {
     // Use defaults if no body
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Fetch health-related grants from Grants.gov with retry
     // oppStatuses uses pipe separator, fundingCategories "HL" = Health
     const response = await fetchWithRetry({
-      keyword: "community health",
+      keyword: searchKeyword,
       oppStatuses: "forecasted|posted",
       fundingCategories: "HL",
       rows: 50,
@@ -95,11 +100,13 @@ export async function POST(request: NextRequest) {
     // Score each grant against the clinic profile
     const allAssessments = allGrants.map((grant) => scoreGrant(grant, profile, scoringKeywords));
 
+    // Drop international noise with no domestic relevance
+    const scored = allGrants
+      .map((grant, i) => ({ grant, assessment: allAssessments[i] }))
+      .filter(({ assessment }) => !shouldExcludeInternationalNoise(assessment));
+
     // Sort by score descending, take top 25
-    const relevant = allGrants.map((grant, i) => ({
-      grant,
-      assessment: allAssessments[i],
-    }));
+    const relevant = [...scored];
     relevant.sort((a, b) => b.assessment.fitScore - a.assessment.fitScore);
     const top = relevant.slice(0, 25);
 
@@ -114,7 +121,40 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Grants.gov API failed after retries, using fallback:", error);
 
-    // Fallback to local data
+    // Try database synthetic grants first
+    if (isDatabaseConfigured()) {
+      try {
+        const sql = getDb();
+        const rows = await sql`SELECT * FROM grants WHERE source = 'synthetic' ORDER BY deadline ASC`;
+        if (rows.length > 0) {
+          const dbGrants: GrantOpportunity[] = rows.map((row) => ({
+            id: row.id as string,
+            title: row.title as string,
+            agency: row.agency as string,
+            deadline: row.deadline ? new Date(row.deadline as string).toISOString().split("T")[0] : "",
+            amountMin: (row.amount_min as number) || undefined,
+            amountMax: (row.amount_max as number) || undefined,
+            eligibilityText: (row.eligibility_text as string) || undefined,
+            summary: (row.summary as string) || undefined,
+            url: (row.url as string) || undefined,
+            source: "fallback" as const,
+            rawTags: (row.raw_tags as string[]) || undefined,
+          }));
+          const dbAssessments = dbGrants.map((g) => scoreGrant(g, profile, scoringKeywords));
+          const sorted = sortByFitScore(dbGrants, dbAssessments);
+          return NextResponse.json({
+            grants: sorted.grants,
+            assessments: sorted.assessments,
+            source: "fallback",
+            totalResults: sorted.grants.length,
+          } satisfies GrantsApiResponse);
+        }
+      } catch (dbErr) {
+        console.error("DB fallback also failed:", dbErr);
+      }
+    }
+
+    // Final fallback to hardcoded local data
     const assessments = FALLBACK_GRANTS.map((grant) =>
       scoreGrant(grant, profile, scoringKeywords)
     );

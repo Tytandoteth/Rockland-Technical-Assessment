@@ -6,17 +6,20 @@ A focused grant discovery tool that fetches live grants from Grants.gov, enriche
 
 Key capabilities:
 - Real-time grant feed from Grants.gov (search + per-grant detail enrichment)
-- Transparent heuristic scoring with human-readable reasoning and risk flags
+- Transparent heuristic scoring with human-readable reasoning and risk flags; **re-score after enrichment** with `scoringSource` surfaced in the UI
 - Optional AI-powered "Quick Take" summaries (OpenAI with heuristic fallback)
-- Pipeline tracker with status management and localStorage persistence
+- Pipeline tracker with status management, **deadline grouping**, **summary metrics**, notes with blur-save / unchanged guard; **localStorage when signed out**, **Neon Postgres per Clerk user** when signed in with `DATABASE_URL`
+- **Eligibility confidence** — list filters and card badges from shared `analyzeEligibility` / `eligibilityTierForGrant` logic
+- **One-page brief** — `/api/brief` markdown for copy + `.md` download (CFO handoff)
+- **SAM.gov spike** — optional `POST /api/sam/verify` behind `SAM_API_KEY`; graceful “unconfigured” / error paths; never blocks Grants.gov
 - Retry/backoff logic and graceful fallback to sample data
 
 ## 2. What We Cut
 
 - **Multiple search queries** — We query the Health category only. Could fan out queries across behavioral health, substance abuse, rural health for broader coverage.
-- **Sort/filter controls** — Grants are sorted by fit score. Could add filters by agency, deadline range, or fit level. Chose not to because it adds UI complexity without proving the core "is this worth pursuing?" loop.
-- **SAM.gov integration** — Would add UEI verification and exclusion checks for eligibility confirmation. Grants.gov covers the core discovery workflow.
-- **Authentication / multi-user** — Single-user demo. Would need auth + database for production.
+- **Agency / amount range filters** — Not in this wave; eligibility tier + sort modes cover the primary triage loop.
+- **Full SAM.gov product** — Only a narrow UEI → public entity lookup spike; no exclusion monitoring, no workflow automation.
+- **Org / SSO / enterprise IAM** — Clerk covers standard sign-in; no SAML/SCIM in this pass.
 
 ## 3. Hybrid AI Approach: Heuristic First, AI Second Opinion
 
@@ -33,22 +36,24 @@ Rather than hardcoding a clinic profile, we built a 3-step onboarding wizard tha
 - **3 quick steps:** clinic basics → focus areas (toggle pills) → patient population and needs
 - **AI enrichment:** raw input → 5-8 optimized focus areas + 10-15 scoring keywords
 - **Sample presets:** "Rural FQHC", "Urban Safety-Net", "Small Rural Clinic" for one-click setup
-- **Persistence:** profile saved in localStorage, wizard skipped on return visits, "Edit" button to re-enter
+- **Persistence:** signed-out users keep profile in localStorage; signed-in users load/save profile via `/api/profile` when Neon is configured, with localStorage still used as fallback if the DB row is empty
 
 This was initially scoped as a stretch goal but proved high-value: the AI-enhanced keywords meaningfully improve grant matching accuracy.
 
-## 5. Single-Surface Architecture with No External Database
+## 5. Single-Surface Next.js + Optional Neon and Clerk
 
-One Next.js deployment handles everything: UI, API proxy, data normalization, scoring, AI summaries. No separate backend, no hosted database, no cross-service communication.
+One Next.js deployment handles UI, API proxy, data normalization, scoring, and AI summaries — no separate FastAPI service.
 
-- **Why no backend:** Adding FastAPI/Railway would burn 30+ minutes on infrastructure with zero user value. Route handlers do everything we need.
-- **Why no database:** localStorage is sufficient for single-user pipeline tracking. The data model is clean enough to migrate to Postgres later. Adding Neon/Supabase would require provisioning, connection strings, and migrations — all wasted time for a demo.
-- **Why Vercel-only:** Zero-config deployment for Next.js. One command deploys everything.
+- **Why still one app:** Route handlers remain the only “backend”; adding Neon does not split the codebase into multiple deployables.
+- **Hybrid persistence:** **Signed-out** users behave like the original demo (localStorage only). **Signed-in** users with `DATABASE_URL` get **durable** pipeline and profile rows keyed by **Clerk `userId`**. If the DB is unset or the user is anonymous, APIs return `source: "localStorage"` and the client falls back to browser storage (and `getPipeline()` when the server returns no rows for a signed-in user without DB).
+- **Why Vercel:** Zero-config deployment for Next.js; set `DATABASE_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `CLERK_SECRET_KEY` in project env for production auth + DB.
 
-## 6. Technical Decision We'd Revisit: Re-scoring After Enrichment
+## 6. Re-scoring After Enrichment (implemented)
 
-Currently, fit scores are computed from the search endpoint's limited fields (title + agency), then enriched detail (description, funding, eligibility) is fetched per-grant on click. The enriched data is displayed but doesn't retroactively update the fit score.
+When Grants.gov `fetchOpportunity` data loads for the selected grant, the client merges description + applicant types + funding fields, re-runs `scoreGrant`, and tags the assessment with `scoringSource: "enriched"`. The list still reflects search-hit scores until the user opens each grant (batch detail fetch for the top N would be the next scaling step).
 
-**With more time:** Re-run the scoring heuristic after enrichment data arrives. This would give significantly more accurate scores — a grant with "FQHC" in its description would score higher than one with only a vaguely relevant title. We'd also batch-fetch detail for the top 10 grants on initial load to improve the list view scores.
+## 7. SAM.gov Spike: Boundaries
 
-**Why we didn't:** The current approach is honest — scores show confidence notes when based on limited data, and the enriched detail panel gives the CFO all the info needed to make a decision regardless of score accuracy.
+- **Env-gated:** `SAM_API_KEY` required; without it the API returns `status: "unconfigured"` and the UI explains the limitation.
+- **Narrow question:** “Does this UEI return a public entity record?” — not registration status depth, exclusions, or representational authority.
+- **Non-blocking:** Grants.gov discovery and pipeline flows never depend on SAM.

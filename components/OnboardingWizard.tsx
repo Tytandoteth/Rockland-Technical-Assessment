@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { SignInButton } from "@clerk/nextjs";
 import { ClinicProfile } from "@/lib/types";
+import { isClerkConfigured } from "@/lib/clerk-client";
+
+const PROFILE_STORAGE_KEY = "rockland-clinic-profile";
 
 interface OnboardingWizardProps {
   onComplete: (profile: ClinicProfile) => void;
+  /** When set (e.g. user clicked Edit), pre-fill all steps from saved profile + localStorage extras */
+  initialProfile?: ClinicProfile | null;
+  /** Clerk session; use `{ isLoaded: true, isSignedIn: false }` when Clerk is not configured */
+  clerkAuth: { isSignedIn: boolean; isLoaded: boolean };
 }
 
 const FOCUS_AREA_OPTIONS = [
@@ -71,7 +79,24 @@ const SAMPLE_PRESETS = [
   },
 ];
 
-export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
+async function syncProfileToServer(profile: ClinicProfile): Promise<void> {
+  try {
+    await fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile),
+    });
+  } catch {
+    // Signed-out or DB unset — ignore
+  }
+}
+
+export default function OnboardingWizard({
+  onComplete,
+  initialProfile = null,
+  clerkAuth,
+}: OnboardingWizardProps) {
+  const { isSignedIn, isLoaded } = clerkAuth;
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,6 +114,32 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [patientDescription, setPatientDescription] = useState("");
   const [currentGrants, setCurrentGrants] = useState("");
   const [biggestNeed, setBiggestNeed] = useState("");
+
+  useEffect(() => {
+    if (!initialProfile) return;
+    setClinicName(initialProfile.clinicName);
+    setState(initialProfile.state);
+    setClinicType(initialProfile.clinicType);
+    setStaffSize(initialProfile.orgSizeBand || "50-100 staff");
+    setSelectedFocusAreas([...initialProfile.focusAreas]);
+    setOtherFocusArea("");
+    setPatientDescription(initialProfile.patientPopulationNotes || "");
+    try {
+      const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (raw) {
+        const o = JSON.parse(raw) as {
+          currentGrants?: string;
+          biggestNeed?: string;
+        };
+        setCurrentGrants(o.currentGrants || "");
+        setBiggestNeed(o.biggestNeed || "");
+      }
+    } catch {
+      setCurrentGrants("");
+      setBiggestNeed("");
+    }
+    setStep(1);
+  }, [initialProfile]);
 
   function loadPreset(preset: typeof SAMPLE_PRESETS[number]) {
     setClinicName(preset.clinicName);
@@ -137,7 +188,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       const data = await res.json();
 
       const profile: ClinicProfile = {
-        id: `clinic-${Date.now()}`,
+        id: initialProfile?.id ?? `clinic-${Date.now()}`,
         clinicName: clinicName || "My Health Center",
         state: state || "Colorado",
         clinicType,
@@ -152,14 +203,26 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         scoringKeywords: data.scoringKeywords || [],
         profileSummary: data.profileSummary || "",
         source: data.source || "heuristic",
+        currentGrants: currentGrants || undefined,
+        biggestNeed: biggestNeed || undefined,
       };
 
-      localStorage.setItem("rockland-clinic-profile", JSON.stringify(enrichedProfile));
-      onComplete(profile);
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(enrichedProfile));
+      if (isClerkConfigured() && isLoaded && isSignedIn) {
+        await syncProfileToServer(enrichedProfile as ClinicProfile);
+      }
+      onComplete(enrichedProfile as ClinicProfile);
     } catch {
       // Fallback: use raw input
+      let prevKeywords: string[] = [];
+      try {
+        const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+        if (raw) prevKeywords = JSON.parse(raw).scoringKeywords || [];
+      } catch {
+        prevKeywords = [];
+      }
       const profile: ClinicProfile = {
-        id: `clinic-${Date.now()}`,
+        id: initialProfile?.id ?? `clinic-${Date.now()}`,
         clinicName: clinicName || "My Health Center",
         state: state || "Colorado",
         clinicType,
@@ -167,8 +230,17 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         patientPopulationNotes: patientDescription || undefined,
         orgSizeBand: staffSize,
       };
-      localStorage.setItem("rockland-clinic-profile", JSON.stringify(profile));
-      onComplete(profile);
+      const withExtras = {
+        ...profile,
+        scoringKeywords: prevKeywords.length > 0 ? prevKeywords : undefined,
+        currentGrants: currentGrants || undefined,
+        biggestNeed: biggestNeed || undefined,
+      };
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(withExtras));
+      if (isClerkConfigured() && isLoaded && isSignedIn) {
+        await syncProfileToServer(withExtras as ClinicProfile);
+      }
+      onComplete(withExtras as ClinicProfile);
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +248,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   return (
     <div className="min-h-screen bg-rockland-cream flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl border border-rockland-gray shadow-lg p-8 max-w-lg w-full">
+      <div className="bg-white rounded-2xl border border-rockland-gray shadow-lg p-8 max-w-lg w-full relative">
+        <div className="absolute top-4 right-4">
+          {isClerkConfigured() && !isSignedIn && (
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="text-[10px] font-semibold text-rockland-teal hover:text-rockland-teal/80"
+              >
+                Sign in
+              </button>
+            </SignInButton>
+          )}
+        </div>
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-xl font-bold text-rockland-navy">
@@ -186,7 +270,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             </span>
           </h1>
           <p className="text-sm text-rockland-navy/60 mt-1">
-            Tell us about your clinic so we can find the best grants for you.
+            {initialProfile
+              ? "Update your clinic profile — your previous answers are pre-filled below."
+              : "Tell us about your clinic so we can find the best grants for you."}
           </p>
           {/* Progress */}
           <div className="flex gap-2 mt-4">
@@ -419,6 +505,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Setting up your profile...
                   </span>
+                ) : initialProfile ? (
+                  "Save changes"
                 ) : (
                   "Find My Grants"
                 )}
@@ -439,7 +527,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               patientPopulationNotes: "Low-income, uninsured/underinsured patients in rural and semi-urban areas.",
               orgSizeBand: "100-200 staff",
             };
-            localStorage.setItem("rockland-clinic-profile", JSON.stringify(defaultProfile));
+            localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(defaultProfile));
             onComplete(defaultProfile);
           }}
           className="w-full mt-4 text-xs text-rockland-navy/40 hover:text-rockland-navy/60 transition-colors text-center"

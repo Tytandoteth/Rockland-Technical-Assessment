@@ -260,3 +260,38 @@ export function scoreGrant(
     confidenceNotes,
   };
 }
+
+
+export interface GrantEnrichmentInput {
+  description: string;
+  applicantTypes: string[];
+  awardCeiling: number | null;
+  awardFloor: number | null;
+  additionalEligibilityInfo?: string | null;
+}
+
+/** Merge Grants.gov fetchOpportunity fields into search-hit grant for re-scoring. */
+export function mergeGrantWithEnrichment(
+  grant: GrantOpportunity,
+  enriched: GrantEnrichmentInput
+): GrantOpportunity {
+  const eligibilityParts = [
+    enriched.applicantTypes?.length ? enriched.applicantTypes.join(", ") : "",
+    enriched.additionalEligibilityInfo?.trim() || "",
+  ].filter(Boolean);
+  return {
+    ...grant,
+    summary: enriched.description?.trim() || grant.summary,
+    eligibilityText: eligibilityParts.length
+      ? eligibilityParts.join(". ")
+      : grant.eligibilityText,
+    amountMax: enriched.awardCeiling ?? grant.amountMax,
+    amountMin: enriched.awardFloor ?? grant.amountMin,
+  };
+}
+
+/** Exclude obvious international-only noise from ranked results (server-side). */
+export function shouldExcludeInternationalNoise(assessment: GrantAssessment): boolean {
+  const intl = assessment.riskFlags.some((f) => /international\/foreign/i.test(f));
+  return intl && assessment.fitScore < 28;
+}

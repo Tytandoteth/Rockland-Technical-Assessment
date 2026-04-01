@@ -20,6 +20,7 @@ export interface EnrichedGrantDetail {
   contactEmail: string | null;
   contactPhone: string | null;
   programTitle: string | null;
+  additionalEligibilityInfo: string | null;
 }
 
 function stripHtml(html: string): string {
@@ -110,6 +111,9 @@ export async function POST(request: NextRequest) {
       contactEmail: src.agencyContactEmail || null,
       contactPhone: src.agencyContactPhone || null,
       programTitle: cfdas[0]?.programTitle || null,
+      additionalEligibilityInfo: src.applicantEligibilityDesc
+        ? stripHtml(src.applicantEligibilityDesc)
+        : null,
     };
 
     return NextResponse.json(result);

@@ -61,12 +61,13 @@
 
 | Cut | Reason |
 |-----|--------|
-| Editable clinic profile | Doesn't prove core value; hardcoded profile drives scoring |
 | Auth / multi-user | Single-user demo sufficient for 10-min use case |
 | Database | localStorage works; 30+ min saved on provisioning |
 | SAM.gov integration | Nice-to-have for UEI verification; Grants.gov covers the core need |
 | Multiple search queries | Health category covers FQHC use case |
-| Sort/filter controls | Fit score sort is the right default for "what deserves attention" |
+| Sort/filter controls (full) | Fit score sort is the default for "what deserves attention"; urgency toggle is roadmap |
+
+**Shipped instead of a hardcoded profile:** Onboarding wizard + optional AI keyword enrichment — see [KEY_DECISIONS.md](./KEY_DECISIONS.md) §4.
 
 ## Tradeoffs
 
@@ -80,10 +81,13 @@
 
 ## What I'd Add With More Time
 
-**Next 2 hours:**
-- Editable clinic profile (focus areas)
-- Sort/filter by agency, deadline, fit level
-- Re-score after enrichment data loads
+See [VISION_AND_ROADMAP.md](./VISION_AND_ROADMAP.md) for the full prioritized list. Short version:
+
+**Next sprint (highest ROI):**
+- Re-score after enrichment + scoring threshold calibration ([IMPROVEMENTS.md](./IMPROVEMENTS.md))
+- Filter penalize international/off-mission grants
+- Urgent-first vs best-fit sort toggle
+- Edit wizard pre-fill + pipeline notes
 
 **Next week:**
 - Postgres + auth for multi-user

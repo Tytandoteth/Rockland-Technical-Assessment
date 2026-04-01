@@ -6,6 +6,12 @@ export interface ClinicProfile {
   focusAreas: string[];
   patientPopulationNotes?: string;
   orgSizeBand?: string;
+  scoringKeywords?: string[];
+  /** Wizard / AI extras persisted in JSON (DB or localStorage) */
+  profileSummary?: string;
+  source?: string;
+  currentGrants?: string;
+  biggestNeed?: string;
 }
 
 export interface GrantOpportunity {
@@ -30,6 +36,7 @@ export interface GrantAssessment {
   riskFlags: string[];
   recommendedAction: string;
   confidenceNotes?: string;
+  scoringSource?: "search" | "enriched";
 }
 
 export interface PipelineItem {
@@ -38,6 +45,7 @@ export interface PipelineItem {
   grantTitle: string;
   grantDeadline?: string;
   grantUrl?: string;
+  grantAmountMax?: number;
   status: "To Review" | "Interested" | "Applying" | "Submitted";
   nextStep?: string;
   note?: string;

@@ -8,7 +8,9 @@
 | Language | TypeScript | Type safety for data normalization, cheap insurance |
 | Styling | Tailwind CSS | Fast to prototype, no CSS-in-JS overhead |
 | Deployment | Vercel | Zero-config for Next.js, instant deploys |
-| Storage | localStorage | Zero setup, sufficient for single-user demo |
+| Auth (optional) | Clerk | Multi-user sign-in; `userId` scopes server data |
+| Storage (signed out) | localStorage | Pipeline + profile without any backend setup |
+| Storage (signed in) | Neon Postgres via `@neondatabase/serverless` | Per-user `pipeline_items` + `clinic_profiles` (JSONB) |
 | External API | Grants.gov v1 | Public, no auth required, real grant data |
 
 ## Why Vercel + Next.js Only
@@ -19,7 +21,7 @@ The assessment requires a deployed prototype in 3 hours. A single-surface Next.j
 - Cross-origin configuration
 - Multiple deployment targets
 
-Next.js route handlers serve as the backend. localStorage handles persistence. One `vercel --prod` command deploys everything.
+Next.js route handlers serve as the backend. **Signed-out** users persist pipeline and profile in **localStorage** only. **Signed-in** users with `DATABASE_URL` set use **Neon Postgres** as source of truth for pipeline and profile (`GET`/`POST`/`PATCH`/`DELETE` `/api/pipeline`, `GET`/`PUT` `/api/profile`). One `vercel --prod` command deploys everything.
 
 ## Route Handler Design
 
@@ -82,7 +84,43 @@ Onboarding profile refinement via AI:
 3. **If no key or API fails:** Build keywords directly from the raw focus area selections
 4. **Return** refined profile with `focusAreas`, `patientPopulationNotes`, `scoringKeywords[]`, and `profileSummary`
 
-The `scoringKeywords` array (10-15 terms) is stored alongside the profile in localStorage and passed to the grants route to boost scoring relevance beyond the user's raw focus area selections.
+The `scoringKeywords` array (10-15 terms) is stored with the profile (localStorage when signed out, or JSON in `clinic_profiles` when signed in) and passed to the grants route to boost scoring relevance beyond the user's raw focus area selections.
+
+### `/api/pipeline` (GET, POST, PATCH, DELETE)
+
+Clerk-authenticated pipeline sync:
+
+1. **`auth()`** provides `userId`; if missing or `DATABASE_URL` unset, responses indicate `source: "localStorage"` so the client keeps local-only behavior.
+2. **GET** — list rows for `user_id = userId`, ordered by `saved_at`.
+3. **POST** — upsert a `PipelineItem`; **`ON CONFLICT (user_id, grant_id)`** updates fields so duplicate saves are idempotent.
+4. **PATCH** — update `status`, `next_step`, and/or `note` for a `grant_id` owned by the user.
+5. **DELETE** — remove row for `grant_id` + `user_id`.
+
+### `/api/profile` (GET, PUT)
+
+1. **GET** — return stored JSON profile for the signed-in user, or `{ profile: null }` if none.
+2. **PUT** — validate required `ClinicProfile` fields (`id`, `clinicName`, `state`, `clinicType`, `focusAreas[]`); upsert into `clinic_profiles.profile` (JSONB).
+
+Schema migration: run [`db/migrations/001_init.sql`](./db/migrations/001_init.sql) in the Neon SQL editor.
+
+### `POST /api/brief`
+
+One-page markdown brief for CFO / leadership handoff (local-first, no new persistence):
+
+1. **Receive** `grant`, `assessment`, optional `profile`, optional `enrichedDetail` (same shape as the client-side enrichment payload)
+2. **Compose** markdown server-side using shared `analyzeEligibility()` so eligibility tier/verdict match the product logic
+3. **Return** `{ markdown, filename }` for copy-to-clipboard and `.md` download in the UI
+
+### `POST /api/sam/verify`
+
+Optional SAM.gov **spike** — does not block Grants.gov discovery:
+
+1. **Receive** `{ uei }` (12-character Unique Entity ID)
+2. **If `SAM_API_KEY` is unset:** Return `{ status: "unconfigured", message }` (HTTP 200) so the UI can show a clear “not configured” state
+3. **If configured:** `GET` SAM Entity Information API v3 (`entity-information/v3/entities`) with `ueiSAM` + `api_key`
+4. **Return** `{ status: "ok", uei, found, message, recordCount? }` or `{ status: "unavailable", message }` on HTTP/network errors
+
+Unknowns: API tier limits, response shape drift, and whether “public record exists” equals “eligible to apply” — documented as a signal only.
 
 ### Why Server-Side Scoring
 
@@ -123,15 +161,18 @@ Grants.gov API Response
        ├─ fitReason (human-readable)
        ├─ riskFlags[]
        ├─ recommendedAction
-       └─ confidenceNotes
+       ├─ confidenceNotes
+       └─ scoringSource ("search" | "enriched") after detail load + re-score
 ```
 
 ## Persistence Approach
 
 | Data | Storage | Why |
 |------|---------|-----|
-| Pipeline items | `localStorage` key: `rockland-pipeline` | Persists across refreshes, zero setup |
-| Clinic profile | Hardcoded default | Editable profile is a stretch goal |
+| Pipeline items (signed out) | `localStorage` key: `rockland-pipeline` | Same as before; no Clerk/DB required |
+| Pipeline items (signed in + DB) | Postgres table `pipeline_items` | Scoped by Clerk `user_id`; survives refresh and device |
+| Clinic profile (signed out) | `localStorage` key: `rockland-clinic-profile` | Wizard + Edit; includes `scoringKeywords` and wizard extras |
+| Clinic profile (signed in + DB) | Postgres table `clinic_profiles` (`profile` JSONB) | Single row per user; wizard `PUT`s after submit |
 | Grant data | Fetched fresh on load | No stale data, real API requirement satisfied |
 
 ### Pipeline Item Lifecycle
@@ -139,17 +180,26 @@ Grants.gov API Response
 ```
 User clicks "Save to Pipeline"
   → PipelineItem created with status "To Review"
-  → Saved to localStorage
+  → Saved to localStorage (signed out) or POST `/api/pipeline` then refetch (signed in)
   → Next step pre-populated from scoring recommendation
   → User can change status: To Review → Interested → Applying → Submitted
   → User can remove from pipeline
+  → Per-item notes: blur-save with unchanged guard + short “Saved” feedback
+  → Pipeline view: summary strip (counts by status, overdue, due in 14 days) and deadline grouping (Overdue / Due 14d / Later / No deadline)
 ```
+
+## List & detail UX (roadmap wave)
+
+- **Eligibility filter chips** on the grant list (`All`, FQHC Eligible, Likely, Verify, Unlikely) use `eligibilityTierForGrant()` / `analyzeEligibility()` on search-hit fields; counts reflect the full result set.
+- **List cards** show a compact eligibility badge alongside fit; assessments are matched by `grantId` (not list index).
+- **Grant detail** shows provenance for fit scoring (`search` vs `enriched`) and for eligibility source (typed applicant types vs listing text).
+- **Brief export** is generated via `/api/brief` and consumed entirely client-side (clipboard + download).
 
 ## Tradeoffs
 
 | Decision | Tradeoff | Would Revisit |
 |----------|----------|---------------|
-| localStorage | No multi-device sync, no backup | Yes — Postgres + auth in production |
+| localStorage (signed out) | No multi-device sync | Mitigated by optional Clerk + Neon for signed-in users |
 | Server-side scoring only | Can't re-score without re-fetching | Maybe — could cache normalized grants |
 | No individual grant detail API | Search endpoint returns limited fields | Yes — use opportunity detail endpoint for richer data |
 | Heuristic scoring | No learning, no personalization | Maybe — could add lightweight ML with usage data |

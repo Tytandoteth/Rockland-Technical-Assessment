@@ -2,6 +2,10 @@
 
 Identified during final QA pass. These are polish items that would improve the product with more time but don't block the core demo.
 
+**Master view:** [VISION_AND_ROADMAP.md](./VISION_AND_ROADMAP.md) merges this backlog with product vision, key decisions, and assessment themes.
+
+**Recently shipped:** Server-side drop for international/foreign noise (`shouldExcludeInternationalNoise`), client-side **re-score after `fetchOpportunity`** enrichment with `scoringSource: "enriched"`, list **Sort: Best fit / Deadline soon**, **agency abbreviations** + tooltips ([`lib/agencyDisplay.ts`](./lib/agencyDisplay.ts)), **Edit profile pre-fill** from saved profile + `currentGrants` / `biggestNeed` in localStorage, **pipeline notes** (blur-to-save) with notes shown in pipeline-only detail fallback.
+
 ---
 
 ## 🔴 High Priority
