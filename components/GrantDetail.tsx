@@ -411,15 +411,28 @@ export default function GrantDetail({
       "",
       grant.url ? `Full listing: ${grant.url}` : "",
     ].filter(Boolean).join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
-      setEmailCopyFlash(true);
-      setTimeout(() => setEmailCopyFlash(false), 2000);
-    } catch {
+
+    let copied = false;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      } catch {
+        // clipboard denied — fall through to mailto
+      }
+    }
+    if (!copied) {
+      // Fallback: open mailto link in a new tab
       const subject = encodeURIComponent(`Grant Opportunity: ${grant.title}`);
       const body = encodeURIComponent(text);
-      window.open(`mailto:?subject=${subject}&body=${body}`, "_self");
+      const a = document.createElement("a");
+      a.href = `mailto:?subject=${subject}&body=${body}`;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.click();
     }
+    setEmailCopyFlash(true);
+    setTimeout(() => setEmailCopyFlash(false), 2000);
   }, [grant, assessment, enrichedDetail, agencyDisplay, effort]);
 
   return (
@@ -784,7 +797,7 @@ export default function GrantDetail({
           className="px-4 py-2.5 border border-rockland-teal/30 text-rockland-teal text-sm font-semibold rounded-lg hover:bg-rockland-teal/5 transition-colors"
           title="Copy a plain-text summary to paste into email"
         >
-          {emailCopyFlash ? "Copied!" : "Share via Email"}
+          {emailCopyFlash ? "Copied to clipboard!" : "Share via Email"}
         </button>
         {grant.url && (
           <a
