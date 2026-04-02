@@ -387,53 +387,49 @@ export default function GrantDetail({
       })
     : assessment.riskFlags;
 
-  const handleCopyEmailSummary = useCallback(async () => {
+  const handleShareViaEmail = useCallback(() => {
     const deadline = grant.deadline
       ? new Date(grant.deadline).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
       : "Not specified";
     const funding = formatFunding(enrichedDetail, grant);
     const flags = assessment.riskFlags;
-    const text = [
+    const body = [
+      `Hi${enrichedDetail?.contactName ? ` ${enrichedDetail.contactName.split(" ")[0]}` : ""},`,
+      "",
+      `I'm writing to inquire about the "${grant.title}" grant opportunity.`,
+      "",
+      `Our clinic, ${profile.clinicName}, is a ${profile.clinicType} in ${profile.state} and we believe this opportunity aligns well with our mission.`,
+      "",
+      "--- Grant Summary ---",
       `Grant: ${grant.title}`,
       `Agency: ${agencyDisplay.label}`,
-      `Fit: ${assessment.fitLabel} (${assessment.fitScore}/100)`,
       `Funding: ${funding}`,
       `Deadline: ${deadline}`,
-      `Effort: ${effort.label} (${effort.hours})`,
+      `Effort estimate: ${effort.label} (${effort.hours})`,
       "",
       `Why it fits: ${assessment.fitReason}`,
       "",
       flags.length > 0
-        ? `Risks: ${flags.join("; ")}`
-        : "Risks: None identified",
-      "",
-      `Next step: ${assessment.recommendedAction}`,
+        ? `Items to verify: ${flags.join("; ")}`
+        : "",
       "",
       grant.url ? `Full listing: ${grant.url}` : "",
+      "",
+      "Thank you for your time.",
+      "",
+      "Best regards",
     ].filter(Boolean).join("\n");
 
-    let copied = false;
-    if (navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(text);
-        copied = true;
-      } catch {
-        // clipboard denied — fall through to mailto
-      }
-    }
-    if (!copied) {
-      // Fallback: open mailto link in a new tab
-      const subject = encodeURIComponent(`Grant Opportunity: ${grant.title}`);
-      const body = encodeURIComponent(text);
-      const a = document.createElement("a");
-      a.href = `mailto:?subject=${subject}&body=${body}`;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.click();
-    }
+    const to = enrichedDetail?.contactEmail || "";
+    const subject = encodeURIComponent(`Inquiry: ${grant.title}`);
+    const encodedBody = encodeURIComponent(body);
+    const a = document.createElement("a");
+    a.href = `mailto:${to}?subject=${subject}&body=${encodedBody}`;
+    a.click();
+
     setEmailCopyFlash(true);
     setTimeout(() => setEmailCopyFlash(false), 2000);
-  }, [grant, assessment, enrichedDetail, agencyDisplay, effort]);
+  }, [grant, assessment, enrichedDetail, agencyDisplay, effort, profile]);
 
   return (
     <div className="space-y-5">
@@ -793,11 +789,11 @@ export default function GrantDetail({
         )}
         <button
           type="button"
-          onClick={handleCopyEmailSummary}
+          onClick={handleShareViaEmail}
           className="px-4 py-2.5 border border-rockland-teal/30 text-rockland-teal text-sm font-semibold rounded-lg hover:bg-rockland-teal/5 transition-colors"
-          title="Copy a plain-text summary to paste into email"
+          title="Open email to the grant contact with a pre-filled summary"
         >
-          {emailCopyFlash ? "Copied to clipboard!" : "Share via Email"}
+          {emailCopyFlash ? "Opening email..." : "Share via Email"}
         </button>
         {grant.url && (
           <a
